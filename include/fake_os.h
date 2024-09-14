@@ -24,7 +24,6 @@ typedef struct FakePCB
 	int pid;
 	void *args;
 	int priority; // used for priority scheduling 
-	double previousPrediction; // used by SJF to predict the duration of the next event
 	int duration;
 	ListHead events;
 } FakePCB;

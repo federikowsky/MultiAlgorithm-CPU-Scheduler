@@ -66,16 +66,19 @@ FakePCB *prediction(ListItem *items, int quantum)
 	FakePCB *proc;
 	FakePCB *shortProcess = NULL;
 	double shortPrediction = __DBL_MAX__;
+
+	
+
 	while ((proc = (FakePCB *)items) != NULL)
 	{
 		double currPrediction = PREDICTION_WEIGHT * ((proc->duration < quantum) ? proc->duration : quantum) +
-								(1 - PREDICTION_WEIGHT) * proc->previousPrediction;
+								(1 - PREDICTION_WEIGHT) * ((ProcSJFArgs *)proc->args)->previousPrediction;
 
 		if (currPrediction < shortPrediction)
 		{
 			shortPrediction = currPrediction;
 			shortProcess = proc;
-			proc->previousPrediction = currPrediction;
+			((ProcSJFArgs *)proc->args)->previousPrediction = currPrediction;
 		}
 		items = items->next;
 	}
