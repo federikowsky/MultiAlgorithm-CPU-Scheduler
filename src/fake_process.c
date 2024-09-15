@@ -24,6 +24,8 @@ void printProcessEvent(ListItem *item)
 
 /**
  * @brief Arguments for the SJF scheduler.
+ * 
+ * @param pcb The process control block to set the arguments for.
  */
 void FakeProcess_SJFArgs(FakePCB *pcb)
 {
@@ -52,6 +54,7 @@ void FakeProcess_setArgs(FakePCB *pcb, SchedulerType scheduler)
 		return ;
 	}
 }
+
 
 int FakeProcess_save(const FakeProcess *p, const char *filename)
 {

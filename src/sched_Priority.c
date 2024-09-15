@@ -6,3 +6,46 @@
 
 #include "../include/fake_os.h"
 
+
+FakePCB *getByPriority(ListHead queue)
+{
+    FakePCB *pcb;
+    FakePCB *highest_priority_pcb = NULL;
+    ListItem *item = queue.first;
+
+    while ((pcb = (FakePCB *)item) != NULL) {
+        if (!highest_priority_pcb || pcb->priority < highest_priority_pcb->priority) {
+            highest_priority_pcb = pcb;
+        }
+        item = item->next;
+    }
+
+    return highest_priority_pcb;
+}
+
+void schedPriority(FakeOS *os, void *args_) 
+{
+    if (!os->ready.first)
+        return;
+
+    SchedPriorArgs *args = (SchedPriorArgs *)args_;
+    FakePCB *pcb = getByPriority(os->ready);
+
+    // Rimuovi il processo dalla ready queue
+    List_detach(&os->ready, (ListItem *)pcb);
+
+    // Metti il processo nella running list (primo slot vuoto)
+    int i = 0;
+    while (os->running[i])
+        ++i;
+    os->running[i] = pcb;
+
+    assert(pcb->events.first);
+    ProcessEvent *e = (ProcessEvent *)pcb->events.first;
+    assert(e->type == CPU);
+
+	/*********************** Priority Preemptive ***********************/
+    // Preempt the current CPU burst event if it exceeds the given quantum
+	if (args->preemptive)
+		Sched_preemption(pcb, args->quantum);
+}

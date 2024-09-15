@@ -1,8 +1,10 @@
+v SJF pure
 v SJF preemptive
 v SJF Non preemptive
 v FCFS
-x Priority
-x Round Robin
+v Priority
+v Priority preemptive
+v Round Robin
 x Multilevel Queue
 x Multilevel Feedback Queue
 x Shortest Remaining Time First

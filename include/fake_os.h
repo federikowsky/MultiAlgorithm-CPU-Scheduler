@@ -14,7 +14,7 @@
 #define ANSI_RESET "\x1b[0m"
 
 
-#define CORES 4 // number of cores in the fake OS 
+#define CORES 1 // number of cores in the fake OS 
 #define QUANTUM 10 // quantum for the prediction scheduler
 
 
@@ -34,6 +34,8 @@ typedef enum SchedulerType
 	SJF_PREDICT,
 	SJF_PREDICT_PREEMPTIVE,
 	SJF_PURE,
+	PRIORITY,
+	PRIORITY_PREEMPTIVE,
 	RR,
 	MLFQ,
 	SRTF
@@ -57,6 +59,3 @@ typedef struct FakeOS
 
 
 void printPCB(ListItem *item);
-void FakeOS_init(FakeOS *os, int cores);
-void FakeOS_simStep(FakeOS *os);
-void FakeOS_destroy(FakeOS *os);

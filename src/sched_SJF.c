@@ -6,49 +6,6 @@
 
 #include "../include/fake_os.h"
 
-// void temp(ListItem *item)
-// {
-// 	FakePCB *pcb = (FakePCB *)item;
-// 	ProcessEvent *e = (ProcessEvent *)pcb->events.first;
-// 	switch (e->type)
-// 	{
-// 	case CPU:
-// 		printf("CPU: %d PID: %d\n", e->duration, pcb->pid);
-// 		break;
-// 	case IO:
-// 		printf("IO: %d PID: %d\n", e->duration, pcb->pid);
-// 		break;
-// 	default:
-// 		assert(0 && "illegal resource");
-// 	}
-// }
-
-/**
- * @brief Comparison function to sort processes by the duration of their next CPU burst.
- *
- * @param a First list item to compare.
- * @param b Second list item to compare.
- * @return int Negative if a < b, zero if a == b, positive if a > b.
- */
-int cmp(ListItem *a, ListItem *b)
-{
-	FakePCB *procA = (FakePCB *)a;
-	FakePCB *procB = (FakePCB *)b;
-
-	// Ensure both processes have events
-	assert(procA->events.first);
-	assert(procB->events.first);
-
-	ProcessEvent *eventA = (ProcessEvent *)procA->events.first;
-	ProcessEvent *eventB = (ProcessEvent *)procB->events.first;
-
-	// Ensure both events are CPU events
-	assert(eventA->type == CPU);
-	assert(eventB->type == CPU);
-
-	return eventA->duration - eventB->duration;
-}
-
 
 /**
  * @brief This function iterates through the list of processes and calculates the prediction time for each process.
@@ -134,21 +91,7 @@ void schedSJF(FakeOS *os, void *args_)
 		++i;
 	running[i] = pcb;
 
-	assert(pcb->events.first);
-	ProcessEvent *e = (ProcessEvent *)pcb->events.first;
-	assert(e->type == CPU);
-
-	/*********************** SJF Prediction & Preemptive ***********************/ 
-	// look at the first event if duration > quantum
-	// push front in the list of event a CPU event of duration quantum
-	// alter the duration of the old event subtracting quantum
-	if (args->preemptive && e->duration > args->quantum)
-	{
-		ProcessEvent *qe = (ProcessEvent *)malloc(sizeof(ProcessEvent));
-		qe->list.prev = qe->list.next = 0;
-		qe->type = CPU;
-		qe->duration = args->quantum;
-		e->duration -= args->quantum;
-		List_pushFront(&pcb->events, (ListItem *)qe);
-	}
+	/*********************** SJF Preemptive ***********************/ 
+	if (args->preemptive)
+		Sched_preemption(pcb, args->quantum);
 };

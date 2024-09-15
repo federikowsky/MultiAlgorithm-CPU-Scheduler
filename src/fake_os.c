@@ -14,13 +14,17 @@ char usage_buffer[1024] = "Usage: %s <num_processes> <scheduler> \n\
 	2: Shortest Job First (SJF) with prediction \n\
 	3: Shortest Job First (SJF) preemptive with prediction \n\
 	4: Shortest Job First (SJF) no prediction \n\
-	5: Round Robin (RR) \n\
-	6: Multi-Level Feedback Queue (MLFQ) \n\
-	7: Shortest Remaining Time First (SRTF) \n\
+	5: Priority \n\
+	6: Priority preemptive \n\
+	7: Round Robin (RR) \n\
+	8: Multi-Level Feedback Queue (MLFQ) \n\
+	9: Shortest Remaining Time First (SRTF) \n\
 \n\
 Example: ./disastros 10 2 \n\
 \n\
 This command will create and simulate 10 processes using the SJF with prediction & quantum scheduling algorithm.\n";
+
+
 
 void printPCB(ListItem *item)
 {
@@ -89,50 +93,67 @@ void FakeOS_init(FakeOS *os, int cores)
  */
 void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 {
-	SchedSJFArgs *srr_args = (SchedSJFArgs *)malloc(sizeof(SchedSJFArgs));
+    assert(scheduler >= FCFS && scheduler <= SRTF && "illegal scheduler");
+    assert(os && "null pointer");
 
-	os->scheduler = scheduler;
+    void *args = NULL;  // Variabile generica per gestire i diversi tipi di args
 
-	switch (scheduler)
-	{
-	case FCFS:
-		os->schedule_fn = 0;
-		break;
-	case SJF_PREDICT:
-		srr_args->quantum = 0;
-		srr_args->prediction = 1;
-		srr_args->preemptive = 0;
-		os->schedule_fn = schedSJF;
-		os->schedule_args = srr_args;
-		break;
-	case SJF_PREDICT_PREEMPTIVE:
-		srr_args->quantum = QUANTUM;
-		srr_args->prediction = 1;
-		srr_args->preemptive = 1;
-		os->schedule_fn = schedSJF;
-		os->schedule_args = srr_args;
-		break;
-	case SJF_PURE:
-		srr_args->quantum = 0;
-		srr_args->prediction = 0;
-		srr_args->preemptive = 0;
-		os->schedule_fn = schedSJF;
-		os->schedule_args = srr_args;
+    switch (scheduler)
+    {
+    case FCFS:
+        os->schedule_fn = 0;
+        os->schedule_args = 0;
+        break;
+
+    case SJF_PREDICT:
+    case SJF_PREDICT_PREEMPTIVE:
+    case SJF_PURE:
+        if ((args = malloc(sizeof(SchedSJFArgs)))) {
+            SchedSJFArgs *srr_args = (SchedSJFArgs *)args;
+            srr_args->quantum = (scheduler == SJF_PREDICT_PREEMPTIVE) ? QUANTUM : 0;
+            srr_args->prediction = (scheduler != SJF_PURE);
+            srr_args->preemptive = (scheduler == SJF_PREDICT_PREEMPTIVE);
+        } else {
+            assert(0 && "malloc failed setting scheduler arguments");
+        }
+        os->schedule_fn = schedSJF;
+        break;
+	case PRIORITY:
+	case PRIORITY_PREEMPTIVE:
+		if ((args = malloc(sizeof(SchedPriorArgs)))) {
+			SchedPriorArgs *prior_args = (SchedPriorArgs *)args;
+			prior_args->quantum = (scheduler == PRIORITY_PREEMPTIVE) ? QUANTUM : 0;
+			prior_args->preemptive = (scheduler == PRIORITY_PREEMPTIVE);
+		} else {
+			assert(0 && "malloc failed setting scheduler arguments");
+		}
+		os->schedule_fn = schedPriority;
 		break;
 	case RR:
-		os->schedule_fn = 0;
-		break;
-	case MLFQ:
-		os->schedule_fn = 0;
-		break;
-	case SRTF:
-		os->schedule_fn = 0;
-		break;
-	default:
-		assert(0 && "illegal scheduler");
-	}
-}
+        if ((args = malloc(sizeof(SchedRRArgs)))) {
+            SchedRRArgs *rr_args = (SchedRRArgs *)args;
+            rr_args->quantum = QUANTUM;
+        } else {
+            assert(0 && "malloc failed setting scheduler arguments");
+        }
+        os->schedule_fn = schedRR;
+        break;
+    case MLFQ:
+        os->schedule_fn = 0;
+        break;
 
+    case SRTF:
+        os->schedule_fn = 0;
+        break;
+
+    default:
+        assert(0 && "illegal scheduler");
+    }
+
+	// set the scheduler arguments and type
+    os->scheduler = scheduler;
+    os->schedule_args = args;
+}
 /**
  * @brief
  *
@@ -166,7 +187,7 @@ int FakeOS_createEventProc(FakeProcess *p, int num_bursts_per_process)
 
 	p->pid = pid++;
 	p->arrival_time = process_arrived;
-	p->priority = rand() % pid;
+	p->priority = (rand() % 10) + 1;
 	List_init(&p->events);
 	p->list.prev = p->list.next = 0;
 
@@ -319,6 +340,20 @@ void FakeOS_simStep(FakeOS *os)
 		}
 	}
 
+	/********************************* READY QUEUE *********************************/
+
+	// scan ready list, and print the pid of the process in the ready list
+	aux = os->ready.first;
+	printf(ANSI_BLUE "\nREADY QUEUE:\n" ANSI_RESET);
+	while (aux)
+	{
+		FakePCB *pcb = (FakePCB *)aux;
+		aux = aux->next;
+		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
+		assert(e->type == CPU);
+		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %2d\n" ANSI_RESET, pcb->pid, e->duration, pcb->priority);
+	}
+
 	/********************************* WAITING QUEUE *********************************/
 
 	// scan waiting list, and put in ready all items whose event terminates
@@ -429,20 +464,6 @@ void FakeOS_simStep(FakeOS *os)
 		}
 	}
 
-	/********************************* READY QUEUE *********************************/
-
-	// scan ready list, and print the pid of the process in the ready list
-	aux = os->ready.first;
-	printf(ANSI_BLUE "\nREADY QUEUE:\n" ANSI_RESET);
-	while (aux)
-	{
-		FakePCB *pcb = (FakePCB *)aux;
-		aux = aux->next;
-		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
-		assert(e->type == CPU);
-		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d\n" ANSI_RESET, pcb->pid, e->duration);
-	}
-
 	/********************************* SCHEDULING *********************************/
 
 	i = -1;
@@ -477,17 +498,21 @@ void FakeOS_simStep(FakeOS *os)
 }
 
 /**
- * @brief Destroy the fake OS structure
+ * @brief Destroy the fake OS structure and free the memory
  *
  * @param os
  */
 void FakeOS_destroy(FakeOS *os)
 {
 	memset(os->running, 0, sizeof(FakePCB *) * os->cores);
-	memset(os->schedule_args, 0, sizeof(SchedSJFArgs));
-	free(os->schedule_args);
 	free(os->running);
+	if (os->schedule_args)
+	{
+		memset(os->schedule_args, 0, sizeof(SchedSJFArgs));
+		free(os->schedule_args);
+	}
 	os->running = 0;
+	os->schedule_args = 0;
 }
 
 
@@ -505,7 +530,6 @@ int main(int argc, char **argv)
 
 	srand(time(NULL));
 
-	
 	FakeOS_init(&os, CORES);
 	FakeOS_setScheduler(&os, atoi(argv[2]) - 1);
 
@@ -517,7 +541,6 @@ int main(int argc, char **argv)
 		FakeOS_createProcess(&os, i);
 	}
 
-	printf("num processes in queue %d\n", os.processes.size);
 	// run the simulation until all processes are terminated and all queues are empty
 	// memcmp returns 0 if the two arrays are equal (in this case, all the pointers are NULL)
 	FakePCB **temp = malloc(sizeof(FakePCB *) * os.cores);
