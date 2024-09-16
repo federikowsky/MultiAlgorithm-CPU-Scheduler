@@ -5,6 +5,6 @@ v FCFS
 v Priority
 v Priority preemptive
 v Round Robin
+x Shortest Remaining Time First
 x Multilevel Queue
 x Multilevel Feedback Queue
-x Shortest Remaining Time First

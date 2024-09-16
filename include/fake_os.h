@@ -34,11 +34,11 @@ typedef enum SchedulerType
 	SJF_PREDICT,
 	SJF_PREDICT_PREEMPTIVE,
 	SJF_PURE,
+	SRTF,
 	PRIORITY,
 	PRIORITY_PREEMPTIVE,
 	RR,
-	MLFQ,
-	SRTF
+	MLFQ
 } SchedulerType;
 
 struct  FakeOS;
@@ -57,5 +57,16 @@ typedef struct FakeOS
 	ListHead processes;
 } FakeOS;
 
+// typedef struct FakeOS {
+//     FakePCB **running;
+//     ListHead ready[NUM_QUEUES];  // Array di code di ready list per ciascuna coda MLFQ
+//     ListHead waiting;
+//     int timer;
+//     int cores;
+//     SchedulerType scheduler[NUM_QUEUES];  // Tipo di scheduler per ciascuna coda
+//     ScheduleFn schedule_fn[NUM_QUEUES];   // Funzione di scheduling per ciascuna coda
+//     void *schedule_args[NUM_QUEUES];      // Parametri di scheduling per ciascuna coda
+//     ListHead processes;
+// } FakeOS;
 
 void printPCB(ListItem *item);

@@ -14,11 +14,11 @@ char usage_buffer[1024] = "Usage: %s <num_processes> <scheduler> \n\
 	2: Shortest Job First (SJF) with prediction \n\
 	3: Shortest Job First (SJF) preemptive with prediction \n\
 	4: Shortest Job First (SJF) no prediction \n\
-	5: Priority \n\
-	6: Priority preemptive \n\
-	7: Round Robin (RR) \n\
-	8: Multi-Level Feedback Queue (MLFQ) \n\
-	9: Shortest Remaining Time First (SRTF) \n\
+	5: Shortest Remaining Time First (SRTF) (a sjf with preemptive)\n\
+	6: Priority \n\
+	7: Priority preemptive \n\
+	8: Round Robin (RR) \n\
+	9: Multi-Level Feedback Queue (MLFQ) \n\
 \n\
 Example: ./disastros 10 2 \n\
 \n\
@@ -93,7 +93,7 @@ void FakeOS_init(FakeOS *os, int cores)
  */
 void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 {
-    assert(scheduler >= FCFS && scheduler <= SRTF && "illegal scheduler");
+    assert(scheduler >= FCFS && scheduler <= MLFQ && "illegal scheduler");
     assert(os && "null pointer");
 
     void *args = NULL;  // Variabile generica per gestire i diversi tipi di args
@@ -108,11 +108,12 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
     case SJF_PREDICT:
     case SJF_PREDICT_PREEMPTIVE:
     case SJF_PURE:
+	case SRTF:
         if ((args = malloc(sizeof(SchedSJFArgs)))) {
             SchedSJFArgs *srr_args = (SchedSJFArgs *)args;
-            srr_args->quantum = (scheduler == SJF_PREDICT_PREEMPTIVE) ? QUANTUM : 0;
-            srr_args->prediction = (scheduler != SJF_PURE);
-            srr_args->preemptive = (scheduler == SJF_PREDICT_PREEMPTIVE);
+            srr_args->quantum = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF)) ? QUANTUM : 0;
+            srr_args->prediction = (scheduler < (SJF_PREDICT | SJF_PREDICT_PREEMPTIVE));
+            srr_args->preemptive = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF));
         } else {
             assert(0 && "malloc failed setting scheduler arguments");
         }
@@ -139,10 +140,6 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
         os->schedule_fn = schedRR;
         break;
     case MLFQ:
-        os->schedule_fn = 0;
-        break;
-
-    case SRTF:
         os->schedule_fn = 0;
         break;
 
