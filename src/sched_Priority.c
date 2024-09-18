@@ -6,6 +6,18 @@
 
 #include "../include/fake_os.h"
 
+void *PriorArgs(int quantum, SchedulerType scheduler)
+{
+    SchedPriorArgs *args = (SchedPriorArgs *)malloc(sizeof(SchedPriorArgs));
+    if (!args)
+    {
+        assert(0 && "malloc failed setting scheduler arguments");
+    }
+    args->preemptive = !(scheduler ^ PRIORITY_PREEMPTIVE);
+    args->quantum = !(scheduler ^ PRIORITY_PREEMPTIVE) ? quantum : 0;
+    return args;
+}
+
 
 FakePCB *getByPriority(ListHead queue)
 {
@@ -47,5 +59,5 @@ void schedPriority(FakeOS *os, void *args_)
 	/*********************** Priority Preemptive ***********************/
     // Preempt the current CPU burst event if it exceeds the given quantum
 	if (args->preemptive)
-		Sched_preemption(pcb, args->quantum);
+		sched_preemption(pcb, args->quantum);
 }

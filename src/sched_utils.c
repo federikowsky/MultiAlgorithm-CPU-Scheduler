@@ -13,24 +13,31 @@
  * @param pcb Pointer to the FakePCB structure representing the process.
  * @param quantum The maximum duration of a CPU burst.
  */
-void Sched_preemption(FakePCB *pcb, int quantum)
+void sched_preemption(FakePCB *pcb, int quantum)
 {
     assert(pcb->events.first);
     ProcessEvent *event = (ProcessEvent *)pcb->events.first;
     assert(event->type == CPU);
 
-    if (event->duration > quantum) {
+    if (event->duration > quantum) 
+    {
         // Create a new CPU burst event for the remaining duration
         ProcessEvent *newEvent = (ProcessEvent *)malloc(sizeof(ProcessEvent));
         newEvent->list.prev = newEvent->list.next = 0;
         newEvent->type = CPU;
-        newEvent->duration = event->duration - quantum;
-
+        // Set the duration of the new CPU burst event to the quantum
+        newEvent->duration = quantum;
         // Update the duration of the current CPU burst event
-        event->duration = quantum;
+        event->duration -= quantum;
+
+        // Set the process as promotion to indicate that it was promotion
+        pcb->promotion = -1;
 
         // Add the new CPU burst event to the process's event list
         List_pushFront(&pcb->events, (ListItem *)newEvent);
+    } else
+    {
+        pcb->promotion = 1;
     }
 }
 

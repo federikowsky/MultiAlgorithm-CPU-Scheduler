@@ -2,7 +2,6 @@
 
 #include "fake_process.h"
 #include "linked_list.h"
-#include "scheduler.h"
 
 #define ANSI_ORANGE "\x1b[38;5;208m"
 #define ANSI_RED "\x1b[31m"
@@ -14,19 +13,13 @@
 #define ANSI_RESET "\x1b[0m"
 
 
-#define CORES 1 // number of cores in the fake OS 
+#define CORES 3 // number of cores in the fake OS 
 #define QUANTUM 10 // quantum for the prediction scheduler
+#define AGING 50 // aging time for the MLFQ scheduler
+#define MLFQ_QUEUES 3 // number of queues in the MLFQ scheduler
 
-
-typedef struct FakePCB
-{
-	ListItem list;
-	int pid;
-	void *args;
-	int priority; // used for priority scheduling 
-	int duration;
-	ListHead events;
-} FakePCB;
+struct  FakeOS;
+typedef void (*ScheduleFn)(struct FakeOS *os, void *args);
 
 typedef enum SchedulerType
 {
@@ -41,32 +34,92 @@ typedef enum SchedulerType
 	MLFQ
 } SchedulerType;
 
-struct  FakeOS;
-typedef void (*ScheduleFn)(struct FakeOS *os, void *args);
+typedef enum processPriority
+{
+	IDLE,
+	NORMAL,
+	HIGH,
+	REALTIME,
+	MAX_PRIORITY // add a new priority before this one 
+} ProcessPriority;
+
+typedef struct 
+{
+	int quantum;
+	int prediction;
+	int preemptive;
+} SchedSJFArgs;
+
+typedef struct 
+{
+	int quantum;
+} SchedRRArgs;
+
+typedef struct 
+{
+	int preemptive;
+	int quantum;
+} SchedPriorArgs;
+
+typedef struct 
+{
+	int num_ready_queues;
+	int *quantum;
+	void **schedule_args;
+	ScheduleFn *schedule_fn;
+	ListHead *ready;
+} SchedMLFQArgs;
+
+typedef struct
+{
+    double previousPrediction;
+} ProcSJFArgs;
+
+
+typedef struct FakePCB
+{
+	ListItem list;
+	int pid;
+	int priority;
+	int duration;
+	int promotion; // da assegnare 
+	unsigned int last_enqueued_time;
+	void *args;
+	ListHead events;
+} FakePCB;
 
 typedef struct FakeOS
 {
+	int timer;
+	int cores;
 	FakePCB **running;
 	ListHead ready;
 	ListHead waiting;
-	int timer;
-	int cores;
 	SchedulerType scheduler;
 	ScheduleFn schedule_fn;
 	void *schedule_args;
 	ListHead processes;
 } FakeOS;
 
-// typedef struct FakeOS {
-//     FakePCB **running;
-//     ListHead ready[NUM_QUEUES];  // Array di code di ready list per ciascuna coda MLFQ
-//     ListHead waiting;
-//     int timer;
-//     int cores;
-//     SchedulerType scheduler[NUM_QUEUES];  // Tipo di scheduler per ciascuna coda
-//     ScheduleFn schedule_fn[NUM_QUEUES];   // Funzione di scheduling per ciascuna coda
-//     void *schedule_args[NUM_QUEUES];      // Parametri di scheduling per ciascuna coda
-//     ListHead processes;
-// } FakeOS;
 
 void printPCB(ListItem *item);
+
+// function auxiliar for the scheduler 
+void sched_preemption(struct FakePCB *pcb, int quantum);
+int cmp(ListItem *a, ListItem *b);
+
+void *RRArgs(int quantum, enum SchedulerType scheduler);
+void *SJFArgs(int quantum, enum SchedulerType scheduler);
+void *PriorArgs(int quantum, enum SchedulerType scheduler);
+void *MLFQArgs(int quantum);
+
+void schedSJF(struct FakeOS *os, void *args_);
+void schedRR(struct FakeOS *os, void *args_);
+void schedPriority(struct FakeOS *os, void *args_);
+void schedMLFQ(struct FakeOS *os, void *args_);
+void schedFCFS(struct FakeOS *os, void *args_);
+
+// function for MLFQ scheduler
+void promote_process(struct FakeOS *os, struct FakePCB *pcb);
+void demote_process(struct FakeOS *os, struct FakePCB *pcb);
+void aging_proc(FakeOS *os);

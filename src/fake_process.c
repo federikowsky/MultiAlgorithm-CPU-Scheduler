@@ -36,20 +36,22 @@ void FakeProcess_SJFArgs(FakePCB *pcb)
 }
 
 /**
- * @brief populate the arguments of the process 
+ * @brief Populate the arguments of the process. 
+ * This function is responsible for populating the arguments of the process.
+ * It takes a PCB (Process Control Block) and a scheduler as parameters.
  * 
- * @param pcb 
- * @param scheduler 
+ * @param pcb The PCB of the process.
+ * @param scheduler The scheduler of the system.
  */
 void FakeProcess_setArgs(FakePCB *pcb, SchedulerType scheduler)
 {
+	// set the arguments of the process
 	switch (scheduler)
 	{
 	case SJF_PREDICT:
 	case SJF_PREDICT_PREEMPTIVE:
 		FakeProcess_SJFArgs(pcb);
 		break;
-	case SJF_PURE:
 	default:
 		return ;
 	}
