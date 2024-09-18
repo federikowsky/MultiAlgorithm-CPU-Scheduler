@@ -6,6 +6,20 @@
 
 #include "../include/fake_os.h"
 
+void *SJFArgs(int quantum, SchedulerType scheduler)
+{
+	SchedSJFArgs *args = (SchedSJFArgs *)malloc(sizeof(SchedSJFArgs));
+	if (!args)
+	{
+		assert(0 && "malloc failed setting scheduler arguments");
+	}
+
+	args->quantum = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF)) ? quantum : 0;
+	args->prediction = (scheduler < (SJF_PREDICT | SJF_PREDICT_PREEMPTIVE));
+	args->preemptive = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF));
+	return args;
+}
+
 
 /**
  * @brief This function iterates through the list of processes and calculates the prediction time for each process.
@@ -93,5 +107,5 @@ void schedSJF(FakeOS *os, void *args_)
 
 	/*********************** SJF Preemptive ***********************/ 
 	if (args->preemptive)
-		Sched_preemption(pcb, args->quantum);
+		sched_preemption(pcb, args->quantum);
 };

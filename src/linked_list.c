@@ -10,16 +10,35 @@ void List_init(ListHead *head)
 	head->size = 0;
 }
 
+int List_empty(ListHead *head)
+{
+	return head->size == 0;
+}
+
 ListItem *List_find(ListHead *head, ListItem *item)
 {
-	// linear scanning of list
-	ListItem *aux = head->first;
-	while (aux)
+	// if the list is empty, return 0
+	if (!head->first)
+		return 0;
+
+	// if the list has only one element, return it if it is the one we are looking for 
+	// otherwise return 0 
+	if (head->size == 1)
+		return (head->first == item) ? item : 0;
+	
+	// double scanning of the list from the beginning and from the end 
+	// to find the item in the list and return it 
+	ListItem *first = head->first;
+	ListItem *last = head->last;
+	while (first && first != last)
 	{
-		if (aux == item)
+		if (first == item || last == item)
 			return item;
-		aux = aux->next;
+		first = first->next;
+		last = last->prev;
 	}
+	if (first == last && first == item)
+		return item;
 	return 0;
 }
 
@@ -33,14 +52,14 @@ ListItem *List_insert(ListHead *head, ListItem *prev, ListItem *item)
 	ListItem *instance = List_find(head, item);
 	assert(!instance);
 
-	// we check that the previous is inthe list
+	// we check that the previous is in the list
 
 	if (prev)
 	{
 		ListItem *prev_instance = List_find(head, prev);
 		assert(prev_instance);
 	}
-	// we check that the previous is inthe list
+	// we check that the previous is in the list
 #endif
 
 	ListItem *next = prev ? prev->next : head->first;

@@ -93,54 +93,34 @@ void FakeOS_init(FakeOS *os, int cores)
  */
 void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 {
-    assert(scheduler >= FCFS && scheduler <= MLFQ && "illegal scheduler");
     assert(os && "null pointer");
 
-    void *args = NULL;  // Variabile generica per gestire i diversi tipi di args
+    void *args;  // Variabile generica per gestire i diversi tipi di args
 
     switch (scheduler)
     {
     case FCFS:
-        os->schedule_fn = 0;
-        os->schedule_args = 0;
+        args = 0;
+        os->schedule_fn = schedFCFS;
         break;
-
     case SJF_PREDICT:
     case SJF_PREDICT_PREEMPTIVE:
     case SJF_PURE:
 	case SRTF:
-        if ((args = malloc(sizeof(SchedSJFArgs)))) {
-            SchedSJFArgs *srr_args = (SchedSJFArgs *)args;
-            srr_args->quantum = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF)) ? QUANTUM : 0;
-            srr_args->prediction = (scheduler < (SJF_PREDICT | SJF_PREDICT_PREEMPTIVE));
-            srr_args->preemptive = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF));
-        } else {
-            assert(0 && "malloc failed setting scheduler arguments");
-        }
+		args = SJFArgs(QUANTUM, scheduler);
         os->schedule_fn = schedSJF;
         break;
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
-		if ((args = malloc(sizeof(SchedPriorArgs)))) {
-			SchedPriorArgs *prior_args = (SchedPriorArgs *)args;
-			prior_args->quantum = (scheduler == PRIORITY_PREEMPTIVE) ? QUANTUM : 0;
-			prior_args->preemptive = (scheduler == PRIORITY_PREEMPTIVE);
-		} else {
-			assert(0 && "malloc failed setting scheduler arguments");
-		}
+		args = PriorArgs(QUANTUM, scheduler);
 		os->schedule_fn = schedPriority;
 		break;
 	case RR:
-        if ((args = malloc(sizeof(SchedRRArgs)))) {
-            SchedRRArgs *rr_args = (SchedRRArgs *)args;
-            rr_args->quantum = QUANTUM;
-        } else {
-            assert(0 && "malloc failed setting scheduler arguments");
-        }
+		args = RRArgs(QUANTUM, scheduler);
         os->schedule_fn = schedRR;
         break;
     case MLFQ:
-        os->schedule_fn = 0;
+		assert(0 && "MLFQ not implemented");
         break;
 
     default:
@@ -151,6 +131,7 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
     os->scheduler = scheduler;
     os->schedule_args = args;
 }
+
 /**
  * @brief
  *
@@ -470,23 +451,6 @@ void FakeOS_simStep(FakeOS *os)
 		if (os->schedule_fn && !cpuFull(os->running, os->cores))
 		{
 			(*os->schedule_fn)(os, os->schedule_args);
-		}
-
-		// (FCFS) First Come First Served scheduling approach
-		// if running not defined and ready queue not empty
-		// put the first in ready to run
-		else if (!cpuFull(os->running, os->cores) && os->ready.first)
-		{
-			FakePCB **temp = os->running;
-			while (*temp)
-			{
-				if (*temp && !(*temp)->pid)
-				{
-					*temp = (FakePCB *)List_popFront(&os->ready);
-					break;
-				}
-				(*temp)++;
-			}
 		}
 	}
 
