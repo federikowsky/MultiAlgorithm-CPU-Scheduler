@@ -34,14 +34,14 @@ float calculateAgingThreshold(const BurstHistogram *hist, int size)
 int weightedMeanQuantum(const char *histogram_file)
 {
 	int cpu_count = 0, io_count = 0;
-	BurstHistogram *cpu_hist = 0, *io_hist = 0;
+	BurstHistogram cpu_hist[100], io_hist[100];
 
 	static int quantum = 0;
 
 	if (quantum)
 		return quantum;
 
-	FakeOS_loadHistogram(histogram_file, &cpu_hist, &cpu_count, &io_hist, &io_count);
+	FakeOS_loadHistogram(histogram_file, cpu_hist, &cpu_count, io_hist, &io_count);
 
 	quantum = (int) calculateWeightedMean(cpu_hist, cpu_count);
 

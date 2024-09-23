@@ -96,5 +96,5 @@ void schedRR(FakeOS *os, void *args_);
 void schedPriority(FakeOS *os, void *args_);
 
 
-void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *cpu_size, BurstHistogram **io_hist, int *io_size);
+void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size);
 void FakeOS_procUpdateStats(FakeOS *os, FakePCB *pcb, ProcStatsType type);

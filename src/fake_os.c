@@ -120,17 +120,17 @@ void FakeOS_init(FakeOS *os, int cores, const char *histogram_file)
  * @param io_hist The array to store the calculated I/O history.
  * @param io_size The size of the `io_hist` array.
  */
-void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *cpu_size, BurstHistogram **io_hist, int *io_size)
+void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size)
 {
     char line[256];
     int is_cpu = 0, is_io = 0;
     static int cpu_count = 0, io_count = 0;
-	static BurstHistogram *cpu_hist_temp = 0, *io_hist_temp = 0;
+	static BurstHistogram cpu_hist_temp[100], io_hist_temp[100];
     
-	if (cpu_hist_temp || io_hist_temp)
+	if (cpu_count || io_count)
 	{
-		*cpu_hist = cpu_hist_temp;
-		*io_hist = io_hist_temp;
+		memcpy(cpu_hist, cpu_hist_temp, cpu_count * sizeof(BurstHistogram));
+		memcpy(io_hist, io_hist_temp, io_count * sizeof(BurstHistogram));
 		*cpu_size = cpu_count;
 		*io_size = io_count;
 		return;
@@ -138,10 +138,6 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *
 
     FILE *file = fopen(filename, "r");
 	assert(file && "file not found");
-
-    // Temporary arrays to store burst histograms
-    BurstHistogram temp_cpu[100];
-    BurstHistogram temp_io[100];
 
     while (fgets(line, sizeof(line), file))
 	{
@@ -174,14 +170,14 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *
 		{
             if (is_cpu)
 			{
-                temp_cpu[cpu_count].burst_time = burst_time;
-                temp_cpu[cpu_count].probability = probability;
+                cpu_hist_temp[cpu_count].burst_time = burst_time;
+                cpu_hist_temp[cpu_count].probability = probability;
                 cpu_count++;
             } 
 			else if (is_io)
 			{
-                temp_io[io_count].burst_time = burst_time;
-                temp_io[io_count].probability = probability;
+                io_hist_temp[io_count].burst_time = burst_time;
+                io_hist_temp[io_count].probability = probability;
                 io_count++;
             }
         }
@@ -189,17 +185,9 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *
 
     fclose(file);
 
-    // Allocate memory for CPU and IO histograms
-    cpu_hist_temp = (BurstHistogram *)malloc(cpu_count * sizeof(BurstHistogram));
-    io_hist_temp = (BurstHistogram *)malloc(io_count * sizeof(BurstHistogram));
-	assert(cpu_hist_temp && io_hist_temp && "memory allocation failed");
-
     // Copy data from temp arrays
-    memcpy(cpu_hist_temp, temp_cpu, cpu_count * sizeof(BurstHistogram));
-    memcpy(io_hist_temp, temp_io, io_count * sizeof(BurstHistogram));
-
-	*cpu_hist = cpu_hist_temp;
-	*io_hist = io_hist_temp;
+    memcpy(cpu_hist, cpu_hist_temp, cpu_count * sizeof(BurstHistogram));
+    memcpy(io_hist, io_hist_temp, io_count * sizeof(BurstHistogram));
 	*cpu_size = cpu_count;
 	*io_size = io_count;
 }
@@ -265,14 +253,14 @@ int FakeOS_createEventProc(FakeProcess *p, const char *filename)
 	assert(p && "null pointer");
 
 	// Definition of the histograms for CPU burst and I/O burst durations for the processes
-	BurstHistogram *cpu_burst_hist, *io_burst_hist;
+	BurstHistogram cpu_burst_hist[100], io_burst_hist[100];
 	int cpu_histogram_size, io_histogram_size;
 
 	// Generate a random number of bursts for the process
 	int num_bursts_per_process = MIN_BURST_PROCESS + rand() % (MAX_BURST_PROCESS - MIN_BURST_PROCESS + 1);
 
 	// Load the histograms for CPU and I/O burst durations from the file
-	FakeOS_loadHistogram(filename, &cpu_burst_hist, &cpu_histogram_size, &io_burst_hist, &io_histogram_size);
+	FakeOS_loadHistogram(filename, cpu_burst_hist, &cpu_histogram_size, io_burst_hist, &io_histogram_size);
 
 	// Create a number of bursts for the process based on the number of bursts per process
 	// and the histograms for CPU and I/O burst

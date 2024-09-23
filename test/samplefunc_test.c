@@ -7,19 +7,18 @@
 
 #include "../include/fake_os.h"
 
-void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *cpu_size, BurstHistogram **io_hist, int *io_size)
+void histogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size)
 {
     char line[256];
     int is_cpu = 0, is_io = 0;
     int cpu_count = 0, io_count = 0;
-	BurstHistogram *cpu_hist_temp = 0, *io_hist_temp = 0;
     
     FILE *file = fopen(filename, "r");
 	assert(file && "file not found");
 
     // Temporary arrays to store burst histograms
-    BurstHistogram temp_cpu[100];
-    BurstHistogram temp_io[100];
+    static BurstHistogram temp_cpu[100];
+    static BurstHistogram temp_io[100];
 
     while (fgets(line, sizeof(line), file))
 	{
@@ -67,17 +66,10 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *
 
     fclose(file);
 
-    // Allocate memory for CPU and IO histograms
-    cpu_hist_temp = (BurstHistogram *)malloc(cpu_count * sizeof(BurstHistogram));
-    io_hist_temp = (BurstHistogram *)malloc(io_count * sizeof(BurstHistogram));
-	assert(cpu_hist_temp && io_hist_temp && "memory allocation failed");
-
     // Copy data from temp arrays
-    memcpy(cpu_hist_temp, temp_cpu, cpu_count * sizeof(BurstHistogram));
-    memcpy(io_hist_temp, temp_io, io_count * sizeof(BurstHistogram));
+    memcpy(cpu_hist, temp_cpu, cpu_count * sizeof(BurstHistogram));
+    memcpy(io_hist, temp_io, io_count * sizeof(BurstHistogram));
 
-	*cpu_hist = cpu_hist_temp;
-	*io_hist = io_hist_temp;
 	*cpu_size = cpu_count;
 	*io_size = io_count;
 }
@@ -85,10 +77,10 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram **cpu_hist, int *
 
 // Funzione di test per verificare la corretta generazione dei burst
 void test_generateBurstDuration(const char *filename) {
-    BurstHistogram *cpu_burst_hist, *io_burst_hist;
+    BurstHistogram cpu_burst_hist[100], io_burst_hist[100];
     int cpu_histogram_size, io_histogram_size;
 
-    FakeOS_loadHistogram(filename, &cpu_burst_hist, &cpu_histogram_size, &io_burst_hist, &io_histogram_size);
+    histogram(filename, cpu_burst_hist, &cpu_histogram_size, io_burst_hist, &io_histogram_size);
 
     if (cpu_histogram_size <= 0 || io_histogram_size <= 0) {
         printf("Failed to load histograms\n");
@@ -150,10 +142,10 @@ void test_generateBurstDuration(const char *filename) {
         assert(io_counts[i] > expected - tolerance && io_counts[i] < expected + tolerance);
     }
 
-    free(cpu_burst_hist);
-    free(io_burst_hist);
-    free(cpu_counts);
-    free(io_counts);
+    // free(cpu_burst_hist);
+    // free(io_burst_hist);
+    // free(cpu_counts);
+    // free(io_counts);
 }
 
 
