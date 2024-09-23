@@ -1,0 +1,198 @@
+4 core - 15 process - histogram/compiler.txt - 20 CPU burst - 20 I/O burst 
+
+1 First Come First Served (FCFS)
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8607.000 ms]
+Waiting time avrg:              [4001.733 ms]
+Response time avrg:             [217.400 ms] 
+Throughput:                     [0.001639]
+CPU Used:                       [97.80%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8678.000 ms]
+Waiting time avrg:              [4137.667 ms]
+Response time avrg:             [230.333 ms] 
+Throughput:                     [0.001595]
+CPU Used:                       [97.84%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8790.800 ms]
+Waiting time avrg:              [4184.800 ms]
+Response time avrg:             [216.533 ms] 
+Throughput:                     [0.001587]
+CPU Used:                       [98.93%]
+
+
+
+
+2 Shortest Job First (SJF) with prediction
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7321.733 ms]
+Waiting time avrg:              [2460.067 ms]
+Response time avrg:             [469.733 ms] 
+Throughput:                     [0.001290]
+CPU Used:                       [94.14%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7290.533 ms]
+Waiting time avrg:              [2078.933 ms]
+Response time avrg:             [732.133 ms] 
+Throughput:                     [0.001327]
+CPU Used:                       [94.95%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7038.667 ms]
+Waiting time avrg:              [1654.200 ms]
+Response time avrg:             [1032.467 ms] 
+Throughput:                     [0.001332]
+CPU Used:                       [95.52%]
+
+
+
+
+3 Shortest Job First (SJF) preemptive with prediction 
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7378.333 ms]
+Waiting time avrg:              [1582.533 ms]
+Response time avrg:             [1303.800 ms] 
+Throughput:                     [0.001267]
+CPU Used:                       [94.26%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7563.533 ms]
+Waiting time avrg:              [1585.667 ms]
+Response time avrg:             [1763.933 ms] 
+Throughput:                     [0.001279]
+CPU Used:                       [96.92%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [6912.533 ms]
+Waiting time avrg:              [1602.133 ms]
+Response time avrg:             [1048.467 ms] 
+Throughput:                     [0.001385]
+CPU Used:                       [94.06%]
+
+
+
+
+4 Shortest Job First (SJF) no prediction 
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7663.133 ms]
+Waiting time avrg:              [2938.400 ms]
+Response time avrg:             [500.000 ms] 
+Throughput:                     [0.001449]
+CPU Used:                       [94.66%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7261.267 ms]
+Waiting time avrg:              [2888.600 ms]
+Response time avrg:             [260.000 ms] 
+Throughput:                     [0.001513]
+CPU Used:                       [96.68%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8021.067 ms]
+Waiting time avrg:              [3328.267 ms]
+Response time avrg:             [267.333 ms] 
+Throughput:                     [0.001472]
+CPU Used:                       [96.06%]
+
+
+
+
+5 Shortest Remaining Time First (SRTF) (a sjf with preemptive)
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8077.133 ms]
+Waiting time avrg:              [3292.267 ms]
+Response time avrg:             [343.533 ms] 
+Throughput:                     [0.001430]
+CPU Used:                       [97.61%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7701.200 ms]
+Waiting time avrg:              [2981.800 ms]
+Response time avrg:             [371.333 ms] 
+Throughput:                     [0.001438]
+CPU Used:                       [96.45%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7263.533 ms]
+Waiting time avrg:              [2498.200 ms]
+Response time avrg:             [539.933 ms] 
+Throughput:                     [0.001561]
+CPU Used:                       [98.42%]
+
+
+
+
+6 Priority 
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7077.800 ms]
+Waiting time avrg:              [2464.600 ms]
+Response time avrg:             [639.867 ms] 
+Throughput:                     [0.001463]
+CPU Used:                       [94.33%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7681.667 ms]
+Waiting time avrg:              [2859.467 ms]
+Response time avrg:             [612.800 ms] 
+Throughput:                     [0.001344]
+CPU Used:                       [94.79%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7310.733 ms]
+Waiting time avrg:              [2490.000 ms]
+Response time avrg:             [580.000 ms] 
+Throughput:                     [0.001482]
+CPU Used:                       [96.73%]
+
+
+
+
+7 Priority preemptive 
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7160.667 ms]
+Waiting time avrg:              [2483.467 ms]
+Response time avrg:             [595.933 ms] 
+Throughput:                     [0.001479]
+CPU Used:                       [97.72%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8085.333 ms]
+Waiting time avrg:              [2819.867 ms]
+Response time avrg:             [686.600 ms] 
+Throughput:                     [0.001335]
+CPU Used:                       [95.12%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [7075.133 ms]
+Waiting time avrg:              [2395.667 ms]
+Response time avrg:             [436.800 ms] 
+Throughput:                     [0.001448]
+CPU Used:                       [94.39%]
+
+
+
+
+8 Round Robin (RR) 
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8458.467 ms]
+Waiting time avrg:              [3904.667 ms]
+Response time avrg:             [219.133 ms] 
+Throughput:                     [0.001532]
+CPU Used:                       [96.20%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8598.800 ms]
+Waiting time avrg:              [4015.333 ms]
+Response time avrg:             [188.133 ms] 
+Throughput:                     [0.001535]
+CPU Used:                       [97.94%]
+
+------------------------------------STATISTICS------------------------------------
+Turnaround time avrg:           [8435.467 ms]
+Waiting time avrg:              [3890.733 ms]
+Response time avrg:             [202.733 ms] 
+Throughput:                     [0.001575]
+CPU Used:                       [96.94%]
