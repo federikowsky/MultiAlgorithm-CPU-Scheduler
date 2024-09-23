@@ -1,0 +1,14 @@
+# CPU Burst: Lunghi (calcolo grafico intenso, simulazione di fisica)
+# IO Burst: Brevi e frequenti (interazione con periferiche, accesso rapido a dati di gioco)
+
+CPU_BURST
+100 0.30  # 30% dei burst durano 100 ms
+200 0.40  # 40% dei burst durano 200 ms
+300 0.20  # 20% dei burst durano 300 ms
+500 0.10  # 10% dei burst durano 500 ms
+
+IO_BURST
+5   0.40  # 40% dei burst durano 5 ms
+10  0.30  # 30% dei burst durano 10 ms
+15  0.20  # 20% dei burst durano 15 ms
+25  0.10  # 10% dei burst durano 25 ms

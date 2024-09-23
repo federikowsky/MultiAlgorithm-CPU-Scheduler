@@ -36,20 +36,27 @@ FakePCB *prediction(ListItem *items, int quantum)
 {
 	FakePCB *proc;
 	FakePCB *shortProcess = NULL;
+	ProcessEvent *e;
 	double shortPrediction = __DBL_MAX__;
-
+	double currPrediction, oldPrediction;
 	
-
 	while ((proc = (FakePCB *)items) != NULL)
 	{
-		double currPrediction = PREDICTION_WEIGHT * ((proc->duration < quantum) ? proc->duration : quantum) +
-								(1 - PREDICTION_WEIGHT) * ((ProcSJFArgs *)proc->args)->previousPrediction;
+		e = (ProcessEvent *)proc->events.first;
+		assert(e->type == CPU);
 
-		if (currPrediction < shortPrediction)
+		if (quantum)
+			currPrediction = (e->duration < quantum) ? e->duration : quantum;
+		else
+			currPrediction = e->duration;
+		oldPrediction = ((ProcSJFArgs *)proc->args)->previousPrediction;
+
+		double newPrediction = PREDICTION_WEIGHT * currPrediction + (1 - PREDICTION_WEIGHT) * oldPrediction;
+		if (newPrediction < shortPrediction)
 		{
-			shortPrediction = currPrediction;
+			shortPrediction = newPrediction;
 			shortProcess = proc;
-			((ProcSJFArgs *)proc->args)->previousPrediction = currPrediction;
+			((ProcSJFArgs *)proc->args)->previousPrediction = newPrediction;
 		}
 		items = items->next;
 	}
@@ -99,11 +106,7 @@ void schedSJF(FakeOS *os, void *args_)
 	pcb = (FakePCB *)List_detach(&os->ready, (ListItem *)pcb);
 
 	// put it in running list (first empty slot)
-	int i = 0;
-	FakePCB **running = os->running;
-	while (running[i])
-		++i;
-	running[i] = pcb;
+	schedule(os, pcb);
 
 	/*********************** SJF Preemptive ***********************/ 
 	if (args->preemptive)

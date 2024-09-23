@@ -1,0 +1,14 @@
+# CPU Burst: Corti e frequenti (gestione di richieste rapide e numerose)
+# IO Burst: Moderati (accesso a database e file system)
+
+CPU_BURST
+5   0.45  # 45% dei burst durano 5 ms
+10  0.35  # 35% dei burst durano 10 ms
+20  0.15  # 15% dei burst durano 20 ms
+50  0.05  # 5% dei burst durano 50 ms
+
+IO_BURST
+10  0.30  # 30% dei burst durano 10 ms
+25  0.40  # 40% dei burst durano 25 ms
+50  0.20  # 20% dei burst durano 50 ms
+100 0.10  # 10% dei burst durano 100 ms

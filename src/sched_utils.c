@@ -4,6 +4,69 @@
 #include "../include/fake_os.h"
 
 /**
+ * @brief Calculate the aging threshold based on the provided histogram file, to be used in aging scheduling
+ * and prevent starvation of low priority processes. 
+ *
+ * @param cpu_hist The array of CPU burst histograms.
+ * @param size The size of the array.
+ * @return the calculated aging threshold value
+ */
+float calculateAgingThreshold(const BurstHistogram *hist, int size)
+{
+    float aging_threshold = 0.0;
+    
+    if (aging_threshold)
+        return aging_threshold;
+
+    float mean = calculateWeightedMean(hist, size);
+
+    aging_threshold = mean * AGING_FACTOR;
+
+    return aging_threshold;
+}
+
+/**
+ * @brief the weighted mean quantum based on the provided histogram file.
+ * 
+ * @param histogram_file The path to the histogram file.
+ * @return The calculated weighted mean quantum.
+ */
+int weightedMeanQuantum(const char *histogram_file)
+{
+	int cpu_count = 0, io_count = 0;
+	BurstHistogram *cpu_hist = 0, *io_hist = 0;
+
+	static int quantum = 0;
+
+	if (quantum)
+		return quantum;
+
+	FakeOS_loadHistogram(histogram_file, &cpu_hist, &cpu_count, &io_hist, &io_count);
+
+	quantum = (int) calculateWeightedMean(cpu_hist, cpu_count);
+
+    return quantum;
+}
+
+/**
+ * @brief Schedule a process to run on a core.
+ *
+ * This function updates the process's stats and adds it to the list of running processes.
+ *
+ * @param os Pointer to the FakeOS structure.
+ * @param pcb Pointer to the FakePCB structure representing the process.
+ */
+void schedule(FakeOS *os, FakePCB *pcb)
+{
+    FakeOS_procUpdateStats(os, pcb, WAITING_TIME); 
+    int i = 0;
+	FakePCB **running = os->running;
+	while (running[i])
+		++i;
+	running[i] = pcb;   
+}
+
+/**
  * @brief Preempt the current CPU burst event if it exceeds the given quantum.
  *
  * This function checks if the current CPU burst duration exceeds the specified quantum. 
@@ -60,5 +123,4 @@ int cmp(ListItem *a, ListItem *b)
 
 	return eventA->duration - eventB->duration;
 }
-
 

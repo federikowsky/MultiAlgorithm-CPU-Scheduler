@@ -3,7 +3,32 @@
 #include <string.h>
 #include <assert.h>
 
-#include "../include/fake_process.h"
+#include "../include/fake_os.h"
+
+/**
+ * @brief 
+ * 
+ * @param cpu_hist The array of CPU burst histograms.
+ * @param size The size of the array.
+ * @return The weighted mean of CPU burst times.
+ */
+float calculateWeightedMean(const BurstHistogram *cpu_hist, int size)
+{
+	static float weighted_sum = 0.0;
+	float total_probability = 0.0;
+
+	if (weighted_sum)
+		return weighted_sum;
+
+	for (int i = 0; i < size; i++) {
+		weighted_sum += cpu_hist[i].burst_time * cpu_hist[i].probability;
+		total_probability += cpu_hist[i].probability;
+	}
+
+	float weighted_mean = weighted_sum / total_probability;
+	return weighted_mean;
+}
+
 
 /**
  * @brief Normalize the probabilities of the histogram
@@ -73,7 +98,7 @@ void uniformSample(int *sampled_indices, float *probabilities, int num_probabili
  * @return int
  */
 
-int generateBurstDuration(BurstHistogram hist[], int size, int num_samples)
+int generateBurstDuration(BurstHistogram *hist, int size, int num_samples)
 {
 	int sampled_index[num_samples];
 	float probabilities[size];
@@ -88,5 +113,5 @@ int generateBurstDuration(BurstHistogram hist[], int size, int num_samples)
 	uniformSample(sampled_index, probabilities, size, num_samples);
 
 	// Return the burst duration corresponding to the first sample
-	return hist[sampled_index[0]].burst_duration;
+	return hist[sampled_index[0]].burst_time;
 }

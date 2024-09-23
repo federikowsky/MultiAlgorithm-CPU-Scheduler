@@ -1,0 +1,13 @@
+# CPU Burst: Brevi e frequenti (scrittura veloce, inserimento di testo)
+# IO Burst: Relativamente lunghi (salvataggio di file, apertura di documenti)
+
+CPU_BURST
+1  0.50  # 50% dei burst durano 1 ms
+2  0.30  # 30% dei burst durano 2 ms
+5  0.15  # 15% dei burst durano 5 ms
+10 0.05  # 5% dei burst durano 10 ms
+
+IO_BURST
+20 0.20  # 20% dei burst durano 20 ms
+50 0.50  # 50% dei burst durano 50 ms
+100 0.30 # 30% dei burst durano 100 ms

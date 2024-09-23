@@ -6,6 +6,7 @@
 
 #include "../include/fake_os.h"
 
+
 void *PriorArgs(int quantum, SchedulerType scheduler)
 {
     SchedPriorArgs *args = (SchedPriorArgs *)malloc(sizeof(SchedPriorArgs));
@@ -18,15 +19,33 @@ void *PriorArgs(int quantum, SchedulerType scheduler)
     return args;
 }
 
+void resetAging(FakePCB *pcb)
+{
+    pcb->curr_priority = pcb->base_priority;
+}
 
-FakePCB *getByPriority(ListHead queue)
+void agingProc(FakePCB *pcb, ProcPriorArgs *args, int currTimer)
+{
+    // max priority level to be incremented
+    ProcessPriority max_proc_priority = HIGH;
+
+    if (currTimer - args->last_aging >= args->agingThreshold && pcb->curr_priority > max_proc_priority)
+    {
+        args->last_aging = currTimer;
+        pcb->curr_priority--;
+    }
+}
+
+FakePCB *getByPriority(FakeOS *os)
 {
     FakePCB *pcb;
     FakePCB *highest_priority_pcb = NULL;
-    ListItem *item = queue.first;
+    ListItem *item = os->ready.first;
 
     while ((pcb = (FakePCB *)item) != NULL) {
-        if (!highest_priority_pcb || pcb->priority < highest_priority_pcb->priority) {
+        // Aging process if wasn't scheduled for a long time
+        agingProc(pcb, ((ProcPriorArgs *)pcb->args), os->timer);
+        if (!highest_priority_pcb || pcb->curr_priority < highest_priority_pcb->curr_priority) {
             highest_priority_pcb = pcb;
         }
         item = item->next;
@@ -41,16 +60,13 @@ void schedPriority(FakeOS *os, void *args_)
         return;
 
     SchedPriorArgs *args = (SchedPriorArgs *)args_;
-    FakePCB *pcb = getByPriority(os->ready);
+    FakePCB *pcb = getByPriority(os);
 
     // Rimuovi il processo dalla ready queue
     List_detach(&os->ready, (ListItem *)pcb);
 
     // Metti il processo nella running list (primo slot vuoto)
-    int i = 0;
-    while (os->running[i])
-        ++i;
-    os->running[i] = pcb;
+    schedule(os, pcb);
 
     assert(pcb->events.first);
     ProcessEvent *e = (ProcessEvent *)pcb->events.first;

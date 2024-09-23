@@ -18,9 +18,5 @@ void schedFCFS(struct FakeOS *os, void *args_)
     pcb->duration = 0;
 
     // put it in running list (first empty slot)
-    int i = 0;
-    FakePCB **running = os->running;
-    while (running[i])
-        ++i;
-    running[i] = pcb;
+    schedule(os, pcb);
 };

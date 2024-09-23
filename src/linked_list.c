@@ -18,7 +18,7 @@ int List_empty(ListHead *head)
 ListItem *List_find(ListHead *head, ListItem *item)
 {
 	// if the list is empty, return 0
-	if (!head->first)
+	if (List_empty(head))
 		return 0;
 
 	// if the list has only one element, return it if it is the one we are looking for 

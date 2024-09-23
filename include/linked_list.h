@@ -12,6 +12,7 @@ typedef struct ListHead {
 } ListHead;
 
 void List_init(ListHead* head);
+int List_empty(ListHead *head);
 ListItem* List_find(ListHead* head, ListItem* item);
 ListItem* List_insert(ListHead* head, ListItem* previous, ListItem* item);
 ListItem* List_detach(ListHead* head, ListItem* item);

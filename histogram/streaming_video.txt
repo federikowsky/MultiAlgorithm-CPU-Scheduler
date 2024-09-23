@@ -1,0 +1,13 @@
+# CPU Burst: Molto corti (decodifica video)
+# IO Burst: Lunghi e frequenti (buffering e scaricamento di contenuti)
+
+CPU_BURST
+2   0.60  # 60% dei burst durano 2 ms
+5   0.25  # 25% dei burst durano 5 ms
+10  0.10  # 10% dei burst durano 10 ms
+20  0.05  # 5% dei burst durano 20 ms
+
+IO_BURST
+50  0.40  # 40% dei burst durano 50 ms
+100 0.40  # 40% dei burst durano 100 ms
+200 0.20  # 20% dei burst durano 200 ms

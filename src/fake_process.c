@@ -21,7 +21,6 @@ void printProcessEvent(ListItem *item)
 	}
 }
 
-
 /**
  * @brief Arguments for the SJF scheduler.
  * 
@@ -29,10 +28,19 @@ void printProcessEvent(ListItem *item)
  */
 void FakeProcess_SJFArgs(FakePCB *pcb)
 {
-	ProcSJFArgs args;
-	args.previousPrediction = 0;
+	ProcSJFArgs *args = (ProcSJFArgs *)malloc(sizeof(ProcSJFArgs));
+	args->previousPrediction = 0;
 
-	pcb->args = &args;
+	pcb->args = args;
+}
+
+void FakeProcess_PriorArgs(FakePCB *pcb)
+{
+	ProcPriorArgs *args = (ProcPriorArgs *)malloc(sizeof(ProcPriorArgs));
+	args->agingThreshold = calculateAgingThreshold((BurstHistogram *)pcb->args, 10);
+	args->last_aging = 0;
+
+	pcb->args = args;
 }
 
 /**
@@ -49,38 +57,103 @@ void FakeProcess_setArgs(FakePCB *pcb, SchedulerType scheduler)
 	case SJF_PREDICT_PREEMPTIVE:
 		FakeProcess_SJFArgs(pcb);
 		break;
-	case SJF_PURE:
+	case PRIORITY:
+	case PRIORITY_PREEMPTIVE:
+		FakeProcess_PriorArgs(pcb);
+		break;
 	default:
+		pcb->args = NULL;
 		return ;
 	}
 }
 
-
-int FakeProcess_save(const FakeProcess *p, const char *filename)
+/**
+ * @brief Initialize the statistics of the process
+ * 
+ * @return ProcessStats* 
+ */
+ProcessStats *FakeProcess_initiStats()
 {
-	FILE *f = fopen(filename, "w");
-	if (!f)
-		return -1;
-	fprintf(f, "PROCESS %d %d\n", p->pid, p->arrival_time);
-	ListItem *aux = p->events.first;
-	int num_events = 0;
-	while (aux)
-	{
-		ProcessEvent *e = (ProcessEvent *)aux;
-		switch (e->type)
-		{
-		case CPU:
-			fprintf(f, "CPU_BURST %d\n", e->duration);
-			++num_events;
-			break;
-		case IO:
-			fprintf(f, "IO_BURST %d\n", e->duration);
-			++num_events;
-			break;
-		default:;
-		}
-		aux = aux->next;
-	}
-	fclose(f);
-	return num_events;
+	ProcessStats *stats = (ProcessStats *)malloc(sizeof(ProcessStats));
+	if (!stats)
+		assert(0 && "malloc failed setting process stats");
+	
+	stats->list.next = stats->list.prev = 0;
+	stats->arrival_time = 0;
+	stats->waiting_time = 0;
+	stats->last_ready_enqueue = 0;
+	stats->turnaround_time = 0;
+	stats->response_time = 0;
+	stats->complete_time = 0;
+
+	return stats;
 }
+
+/**
+ * @brief Update the arrival time of the process, the time the process arrived in the system
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_arrivalTime(FakePCB *pcb, unsigned int timer)
+{
+	pcb->stats->arrival_time = timer;
+}
+
+/**
+ * @brief Update the last enqueued time of the process, the last time the process was in the ready queue
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_lastEnqueuedTime(FakePCB *pcb, unsigned int timer)
+{
+	pcb->stats->last_ready_enqueue = timer;
+}
+
+/**
+ * @brief Update the waiting time of the process, how long the process has been waiting in the ready queue
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_waitingTime(FakePCB *pcb, unsigned int timer)
+{
+	if (pcb->stats->last_ready_enqueue)
+		pcb->stats->waiting_time += timer - pcb->stats->last_ready_enqueue;
+}
+
+/**
+ * @brief Update the complete time of the process, the time the process completed execution
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_completeTime(FakePCB *pcb, unsigned int timer)
+{
+	pcb->stats->complete_time = timer;
+}
+
+/**
+ * @brief Update the turnaround time of the process, the time the process effectively spent in the system
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_turnaroundTime(FakePCB *pcb, unsigned int timer)
+{
+	pcb->stats->turnaround_time = pcb->stats->complete_time - pcb->stats->arrival_time;
+}
+
+/**
+ * @brief Update the response time of the process, the time the process took to start executing
+ * 
+ * @param pcb 
+ * @param timer 
+ */
+void FakeProcess_responseTime(FakePCB *pcb, unsigned int timer)
+{
+	if (!pcb->stats->response_time)
+		pcb->stats->response_time = timer - pcb->stats->arrival_time;
+}
+

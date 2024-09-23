@@ -1,0 +1,13 @@
+# CPU Burst: Lunghi (rendering, elaborazione)
+# IO Burst: Lunghi (salvataggio/caricamento di file di grandi dimensioni)
+
+CPU_BURST
+100  0.30  # 30% dei burst durano 100 ms
+200  0.30  # 30% dei burst durano 200 ms
+500  0.30  # 30% dei burst durano 500 ms
+1000 0.10  # 10% dei burst durano 1000 ms
+
+IO_BURST
+100  0.20  # 20% dei burst durano 100 ms
+500  0.50  # 50% dei burst durano 500 ms
+1000 0.30  # 30% dei burst durano 1000 ms

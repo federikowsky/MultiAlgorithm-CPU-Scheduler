@@ -1,0 +1,13 @@
+# CPU Burst: Moderati (gestione di query)
+# IO Burst: Lunghi (accesso frequente ai dati)
+
+CPU_BURST
+20  0.35  # 35% dei burst durano 20 ms
+40  0.30  # 30% dei burst durano 40 ms
+60  0.25  # 25% dei burst durano 60 ms
+100 0.10  # 10% dei burst durano 100 ms
+
+IO_BURST
+50  0.25  # 25% dei burst durano 50 ms
+100 0.50  # 50% dei burst durano 100 ms
+200 0.25  # 25% dei burst durano 200 ms
