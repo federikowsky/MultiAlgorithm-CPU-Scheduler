@@ -13,7 +13,7 @@ void *RRArgs(int quantum, SchedulerType scheduler)
     {
         assert(0 && "malloc failed setting scheduler arguments");
     }
-    args->quantum = !(scheduler ^ RR) ? quantum : 0;
+    args->quantum = quantum;
     return args;
 }
 

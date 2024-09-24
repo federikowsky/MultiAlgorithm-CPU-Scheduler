@@ -1,2 +1,3 @@
 - aging deve essere reimpostato dopo fine cpu_burst anche con scheduler preemptive? se si come?
 - giusto vedere le statistiche cosi ?
+- giusto calcolare il quantum come media pesata ?

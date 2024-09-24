@@ -14,9 +14,9 @@ void *SJFArgs(int quantum, SchedulerType scheduler)
 		assert(0 && "malloc failed setting scheduler arguments");
 	}
 
-	args->quantum = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF)) ? quantum : 0;
-	args->prediction = (scheduler < (SJF_PREDICT | SJF_PREDICT_PREEMPTIVE));
-	args->preemptive = !(scheduler & ~(SJF_PREDICT_PREEMPTIVE | SRTF));
+	args->quantum = (scheduler == SJF_PREDICT_PREEMPTIVE || scheduler == SRTF) ? quantum : 0;
+	args->prediction = (scheduler == SJF_PREDICT || scheduler == SJF_PREDICT_PREEMPTIVE);
+	args->preemptive = (scheduler == SJF_PREDICT_PREEMPTIVE || scheduler == SRTF);
 	return args;
 }
 

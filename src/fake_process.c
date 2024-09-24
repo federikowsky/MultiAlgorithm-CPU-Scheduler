@@ -39,6 +39,7 @@ void FakeProcess_PriorArgs(FakePCB *pcb)
 	ProcPriorArgs *args = (ProcPriorArgs *)malloc(sizeof(ProcPriorArgs));
 	args->agingThreshold = calculateAgingThreshold((BurstHistogram *)pcb->args, 10);
 	args->last_aging = 0;
+	args->curr_priority = pcb->priority;
 
 	pcb->args = args;
 }

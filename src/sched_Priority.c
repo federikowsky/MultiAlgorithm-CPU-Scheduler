@@ -14,25 +14,26 @@ void *PriorArgs(int quantum, SchedulerType scheduler)
     {
         assert(0 && "malloc failed setting scheduler arguments");
     }
-    args->preemptive = !(scheduler ^ PRIORITY_PREEMPTIVE);
-    args->quantum = !(scheduler ^ PRIORITY_PREEMPTIVE) ? quantum : 0;
+    args->preemptive = (scheduler == PRIORITY_PREEMPTIVE);
+    args->quantum = (scheduler == PRIORITY_PREEMPTIVE) ? quantum : 0;
     return args;
 }
 
 void resetAging(FakePCB *pcb)
 {
-    pcb->curr_priority = pcb->base_priority;
+    ProcPriorArgs *args = (ProcPriorArgs *)pcb->args;
+    args->curr_priority = pcb->priority;
 }
 
-void agingProc(FakePCB *pcb, ProcPriorArgs *args, int currTimer)
+void agingProc(ProcPriorArgs *args, int currTimer)
 {
     // max priority level to be incremented
     ProcessPriority max_proc_priority = HIGH;
 
-    if (currTimer - args->last_aging >= args->agingThreshold && pcb->curr_priority > max_proc_priority)
+    if (currTimer - args->last_aging >= args->agingThreshold && args->curr_priority > max_proc_priority)
     {
         args->last_aging = currTimer;
-        pcb->curr_priority--;
+        args->curr_priority--;
     }
 }
 
@@ -44,8 +45,9 @@ FakePCB *getByPriority(FakeOS *os)
 
     while ((pcb = (FakePCB *)item) != NULL) {
         // Aging process if wasn't scheduled for a long time
-        agingProc(pcb, ((ProcPriorArgs *)pcb->args), os->timer);
-        if (!highest_priority_pcb || pcb->curr_priority < highest_priority_pcb->curr_priority) {
+        agingProc(((ProcPriorArgs *)pcb->args), os->timer);
+        if (!highest_priority_pcb || ((ProcPriorArgs *)pcb->args)->curr_priority < ((ProcPriorArgs *)highest_priority_pcb->args)->curr_priority)
+        {
             highest_priority_pcb = pcb;
         }
         item = item->next;
@@ -76,4 +78,6 @@ void schedPriority(FakeOS *os, void *args_)
     // Preempt the current CPU burst event if it exceeds the given quantum
 	if (args->preemptive)
 		sched_preemption(pcb, args->quantum);
+    
+    resetAging(pcb);
 }

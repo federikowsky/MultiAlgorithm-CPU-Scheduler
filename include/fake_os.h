@@ -25,6 +25,7 @@ typedef void (*ScheduleFn)(struct FakeOS *os, void *args);
 typedef enum SchedulerType
 {
 	FCFS,
+	FCFS_PREEMPTIVE,
 	SJF_PREDICT,
 	SJF_PREDICT_PREEMPTIVE,
 	SJF_PURE,
@@ -36,6 +37,12 @@ typedef enum SchedulerType
 	MAX_SCHEDULERS // add a new scheduler before this one
 } SchedulerType;
 
+
+typedef struct
+{
+	int quantum;
+	int preemptive;
+} SchedFCFSArgs;
 
 typedef struct 
 {
@@ -86,9 +93,10 @@ void sched_preemption(struct FakePCB *pcb, int quantum);
 int cmp(ListItem *a, ListItem *b);
 void resetAging(FakePCB *pcb);
 
-void *RRArgs(int quantum, enum SchedulerType scheduler);
+void *FCFSArgs(int quantum, SchedulerType scheduler);
 void *SJFArgs(int quantum, enum SchedulerType scheduler);
 void *PriorArgs(int quantum, enum SchedulerType scheduler);
+void *RRArgs(int quantum, enum SchedulerType scheduler);
 
 void schedFCFS(FakeOS *os, void *args_);
 void schedSJF(FakeOS *os, void *args_);

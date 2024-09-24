@@ -43,6 +43,7 @@ typedef struct
 {
 	int agingThreshold;
 	unsigned int last_aging;
+	ProcessPriority curr_priority;
 } ProcPriorArgs;
 
 typedef struct ProcessEvent
@@ -78,8 +79,7 @@ typedef struct FakePCB
 	ListItem list;
 	int pid;
 	int duration;
-	ProcessPriority curr_priority;
-	ProcessPriority base_priority;
+	ProcessPriority priority;
 	void *args;
 	ProcessStats *stats;
 	ListHead events;

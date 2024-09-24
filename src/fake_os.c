@@ -12,17 +12,18 @@ char usage_buffer[1024] = "Usage: %s <num_cores> <num_processes> <scheduler> <hi
 <num_processes>: Number of processes to create and simulate. \n\
 <scheduler>: The scheduling algorithm to use: \n\
 	1: First Come First Served (FCFS) \n\
-	2: Shortest Job First (SJF) with prediction \n\
-	3: Shortest Job First (SJF) preemptive with prediction \n\
-	4: Shortest Job First (SJF) no prediction \n\
-	5: Shortest Remaining Time First (SRTF) (a sjf with preemptive)\n\
-	6: Priority \n\
-	7: Priority preemptive \n\
-	8: Round Robin (RR) \n\
-	9: Multi-Level Feedback Queue (MLFQ) \n\
+	2: First Come First Served (FCFS) preemptive \n\
+	3: Shortest Job First (SJF) with prediction \n\
+	4: Shortest Job First (SJF) preemptive with prediction \n\
+	5: Shortest Job First (SJF) no prediction \n\
+	6: Shortest Remaining Time First (SRTF) (a sjf with preemptive)\n\
+	7: Priority \n\
+	8: Priority preemptive \n\
+	9: Round Robin (RR) \n\
+	10: Multi-Level Feedback Queue (MLFQ) \n\
 <histogram_file>: The path to the file containing the histogram data. \n\
 \n\
-Example: ./disastros 4 10 2 compiler.txt\n\
+Example: ./disastros 4 10 4 compiler.txt\n\
 \n\
 This command will create 4 core and simulate 10 processes using the SJF with prediction & quantum scheduling algorithm with compiler histogram example \n";
 
@@ -50,7 +51,7 @@ void printPCB(ListItem *item)
 {
 	FakePCB *pcb = (FakePCB *)item;
 	printf("PID: %d\n", pcb->pid);
-	printf("Priority: %s\n", print_priority(pcb->curr_priority));
+	printf("Priority: %s\n", print_priority(pcb->priority));
 	printf("Duration: %d\n", pcb->duration);
 	// List_print(&pcb->events, printProcessEvent);
 }
@@ -208,7 +209,8 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
     switch (scheduler)
     {
     case FCFS:
-        args = 0;
+	case FCFS_PREEMPTIVE:
+		args = FCFSArgs(quantum, scheduler);
         os->schedule_fn = schedFCFS;
         break;
     case SJF_PREDICT:
@@ -307,14 +309,14 @@ void FakeOS_createProcess(FakeOS *os, int proc_num)
 	FakeProcess new_process = {0};
 
 	new_process.pid = pid++;
-	new_process.arrival_time = rand() % 10;
+	new_process.arrival_time = rand() % 100;
 	new_process.priority = rand() % MAX_PRIORITY;
 	List_init(&new_process.events);
 	new_process.list.prev = new_process.list.next = 0;
 
 	int num_events = FakeOS_createEventProc(&new_process, os->histogram_file);
-	printf("created [Process: %2d], pid: %2d, events:%2d, arrival_time:%2d, priority_level: %2d\n",
-		   proc_num, new_process.pid, num_events, new_process.arrival_time, new_process.priority);
+	printf("created [Process: %2d], pid: %3d, events: %3d, arrival_time: %3d, priority_level: %2s\n",
+		   proc_num, new_process.pid, num_events, new_process.arrival_time, print_priority(new_process.priority));
 	if (num_events)
 	{
 		FakeProcess *new_process_ptr = (FakeProcess *)malloc(sizeof(FakeProcess));
@@ -363,12 +365,12 @@ void FakeOS_createPcb(FakeOS *os, FakeProcess *p)
 	new_pcb->list.next = new_pcb->list.prev = 0;
 	new_pcb->pid = p->pid;
 	new_pcb->events = p->events;
-	new_pcb->curr_priority = new_pcb->base_priority = p->priority;
+	new_pcb->priority = p->priority;
 	new_pcb->duration = 0;
 	new_pcb->stats = FakeProcess_initiStats();
 	FakeProcess_setArgs(new_pcb, os->scheduler);
 	FakeOS_procUpdateStats(os, new_pcb, ARRIVAL_TIME); 
-
+     
 	assert(new_pcb->events.first && "process without events");
 
 	// depending on the type of the first event
@@ -391,6 +393,11 @@ void FakeOS_createPcb(FakeOS *os, FakeProcess *p)
 	}
 }
 
+/**
+ * @brief Destroy a PCB and free its memory
+ *
+ * @param pcb
+ */
 void FakeOS_destroyPCB(FakePCB *pcb)
 {
 	if (pcb->args)
@@ -569,7 +576,6 @@ void FakeOS_simStep(FakeOS *os)
 					case IO:
 						// caso priority scheduling
 						// se il processo ha completato un burst di CPU, resetta la priorità
-						resetAging(*running);
 						List_pushBack(&os->waiting, (ListItem *)*running);
 						printf(ANSI_YELLOW "\t\t[!] end burst -> move to waiting\n" ANSI_RESET);
 						break;
@@ -604,7 +610,7 @@ void FakeOS_simStep(FakeOS *os)
 		FakePCB *pcb = (FakePCB *)aux;
 		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
 		assert(e->type == CPU);
-		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->curr_priority));
+		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->priority));
 		aux = aux->next;
 	}
 
