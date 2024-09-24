@@ -401,11 +401,7 @@ void FakeOS_createPcb(FakeOS *os, FakeProcess *p)
 void FakeOS_destroyPCB(FakePCB *pcb)
 {
 	if (pcb->args)
-	{
-		memset(pcb->args, 0, sizeof(ProcSJFArgs));
 		free(pcb->args);
-	}
-	memset(pcb, 0, sizeof(FakePCB));
 	free(pcb);	
 }
 
@@ -472,7 +468,6 @@ void FakeOS_simStep(FakeOS *os)
 			printf(ANSI_CYAN "\t[+] new process coming - pid : %2d\n" ANSI_RESET, new_process->pid);
 			new_process = (FakeProcess *)List_detach(&os->processes, (ListItem *)new_process);
 			FakeOS_createPcb(os, new_process);
-			memset(new_process, 0, sizeof(FakeProcess));
 			free(new_process);
 			new_process = 0;
 		}
@@ -493,7 +488,6 @@ void FakeOS_simStep(FakeOS *os)
 		if (e->duration == 0)
 		{
 			List_popFront(&pcb->events);
-			memset(e, 0, sizeof(ProcessEvent));
 			free(e);
 			e = 0;
 			List_detach(&os->waiting, (ListItem *)pcb);
@@ -560,7 +554,6 @@ void FakeOS_simStep(FakeOS *os)
 			if (e->duration == 0)
 			{
 				List_popFront(&(*running)->events);
-				memset(e, 0, sizeof(ProcessEvent));
 				free(e);
 				e = 0;
 				if ((*running)->events.first)
@@ -690,19 +683,15 @@ void FakeOS_calculateStatistics(FakeOS *os) {
  */
 void FakeOS_destroy(FakeOS *os)
 {
-	memset(os->running, 0, sizeof(FakePCB *) * os->cores);
 	free(os->running);
 	if (os->schedule_args)
-	{
-		memset(os->schedule_args, 0, sizeof(SchedSJFArgs));
 		free(os->schedule_args);
-	}
+
 	ListItem *aux = os->terminated_stats.first;
 	while (aux)
 	{
 		ProcessStats *stats = (ProcessStats *)aux;
 		aux = aux->next;
-		memset(stats, 0, sizeof(ProcessStats));
 		free(stats);
 		stats = 0;
 	}
@@ -756,7 +745,6 @@ int main(int argc, char **argv)
 	{
 		FakeOS_simStep(&os);
 	}
-	memset(temp, 0, sizeof(FakePCB *) * os.cores);
 	free(temp);
 	temp = 0;
 	FakeOS_calculateStatistics(&os);
