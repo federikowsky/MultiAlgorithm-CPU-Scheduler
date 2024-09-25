@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "../include/fake_os.h"
 
@@ -71,6 +72,11 @@ void dispatcher(FakeOS *os, FakePCB *pcb)
 		++i;
 	running[i] = pcb;   
     FakeOS_procUpdateStats(os, pcb, WAITING_TIME); 
+
+#ifdef _SBS_DEBUG_
+	// to debug the simulation step by step press enter to continue
+	getchar();
+#endif
 }
 
 /**
@@ -93,6 +99,8 @@ void sched_preemption(FakePCB *pcb, int quantum)
     {
         // Create a new CPU burst event for the remaining duration
         ProcessEvent *newEvent = (ProcessEvent *)malloc(sizeof(ProcessEvent));
+        if (!newEvent)
+            assert(0 && "malloc failed creating new CPU burst event");
         newEvent->list.prev = newEvent->list.next = 0;
         newEvent->type = CPU;
         // Set the duration of the new CPU burst event to the quantum

@@ -22,7 +22,8 @@ void MLQ_printQueue(SchedMLQArgs *sched_args)
             FakePCB *pcb = (FakePCB *)aux;
             ProcessEvent *e = (ProcessEvent *)pcb->events.first;
             assert(e->type == CPU);
-            printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->priority));
+            printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %3d - Priority: %-8s\n" ANSI_RESET, 
+                pcb->pid, e->duration, print_priority(pcb->priority));
             aux = aux->next;
         }
     }

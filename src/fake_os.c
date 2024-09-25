@@ -63,6 +63,10 @@ void FakeOS_printReadyQueue(FakeOS *os)
 
 	switch (os->scheduler)
 	{
+	case SJF_PREDICT:
+	case SJF_PREDICT_PREEMPTIVE:
+		SJF_printQueue(os);
+		break;
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
 		Prior_printQueue(os);
@@ -81,7 +85,8 @@ void FakeOS_printReadyQueue(FakeOS *os)
 			FakePCB *pcb = (FakePCB *)aux;
 			ProcessEvent *e = (ProcessEvent *)pcb->events.first;
 			assert(e->type == CPU);
-			printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->priority));
+			printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %3d - Priority: %-8s\n" ANSI_RESET, 
+				pcb->pid, e->duration, print_priority(pcb->priority));
 			aux = aux->next;
 		}
 	}
@@ -130,6 +135,8 @@ int cpuFull(FakePCB **running, int cores)
 void FakeOS_init(FakeOS *os, int cores, const char *histogram_file)
 {
 	os->running = calloc(cores, sizeof(FakePCB *));
+	if (!os->running)
+		assert(0 && "malloc failed creating running array");
 	List_init(&os->ready);
 	List_init(&os->waiting);
 	List_init(&os->processes);
@@ -350,11 +357,13 @@ void FakeOS_createProcess(FakeOS *os, int proc_num)
 	new_process.list.prev = new_process.list.next = 0;
 
 	int num_events = FakeOS_createEventProc(&new_process, os->histogram_file);
-	printf("created [Process: %2d], pid: %3d, events: %3d, arrival_time: %3d, priority_level: %2s\n",
+	printf("created [Process: %3d], pid: %3d, events: %3d, arrival_time: %3d, priority_level: %2s\n",
 		   proc_num, new_process.pid, num_events, new_process.arrival_time, print_priority(new_process.priority));
 	if (num_events)
 	{
 		FakeProcess *new_process_ptr = (FakeProcess *)malloc(sizeof(FakeProcess));
+		if (!new_process_ptr)
+			assert(0 && "malloc failed creating process");
 		*new_process_ptr = new_process;
 		List_pushBack(&os->processes, (ListItem *)new_process_ptr);
 	}
@@ -397,6 +406,8 @@ void FakeOS_createPcb(FakeOS *os, FakeProcess *p)
 
 	// all fine, no such pcb exists, we can create it
 	FakePCB *new_pcb = (FakePCB *)malloc(sizeof(FakePCB));
+	if (!new_pcb)
+		assert(0 && "malloc failed creating pcb");
 	new_pcb->list.next = new_pcb->list.prev = 0;
 	new_pcb->pid = p->pid;
 	new_pcb->events = p->events;
@@ -443,10 +454,12 @@ void FakeOS_procUpdateStats(FakeOS *os, FakePCB *pcb, ProcStatsType type)
 		break;
 	case COMPLETE_TIME:
 		FakeProcess_completeTime(pcb, os->timer);
+	case TURNAROUND_TIME:
 		FakeProcess_turnaroundTime(pcb, os->timer);
 		break;
 	case WAITING_TIME:
 		FakeProcess_waitingTime(pcb, os->timer);
+	case RESPONSE_TIME:
 		FakeProcess_responseTime(pcb, os->timer);
 		break;
 	default:
@@ -483,6 +496,8 @@ void FakeOS_enqueueProcess(FakeOS *os, FakePCB *pcb)
 			List_pushBack(&os->waiting, (ListItem *)pcb);
 			printf(ANSI_YELLOW "\t\t[!] move to waiting\n" ANSI_RESET);
 			break;
+		default:
+			assert(0 && "illegal resource");
 		}
 	}
 	else
@@ -618,7 +633,8 @@ void FakeOS_calculateStatistics(FakeOS *os) {
     ListItem *item = os->terminated_stats.first;
 
     // Itera su tutti i processi completati per raccogliere i dati
-    while (item) {
+    while (item)
+	{
         ProcessStats *stats = (ProcessStats *)item;
         
         // Incrementa i contatori con i dati del processo
@@ -630,7 +646,8 @@ void FakeOS_calculateStatistics(FakeOS *os) {
         item = item->next;
     }
 
-    if (total_processes == 0) {
+    if (total_processes == 0)
+	{
         printf("Nessun processo completato.\n");
         return;
     }
@@ -698,7 +715,7 @@ int main(int argc, char **argv)
 {
 	FakeOS os;
 
-	if (argc < 4)
+	if (argc != 5)
 	{
 		printf(usage_buffer, argv[0]);
 		return 1;
@@ -741,4 +758,6 @@ int main(int argc, char **argv)
 	temp = 0;
 	FakeOS_calculateStatistics(&os);
 	FakeOS_destroy(&os);
+	
+	return 0;
 }

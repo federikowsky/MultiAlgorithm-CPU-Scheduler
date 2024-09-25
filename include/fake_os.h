@@ -78,10 +78,10 @@ typedef struct
 typedef struct 
 {
 	int num_ready_queues;
+	unsigned int agingThreshold;
 	void **schedule_args;
 	ScheduleFn *schedule_fn;
 	ListHead *ready;
-	unsigned int agingThreshold;
 } SchedMLFQArgs;
 
 
@@ -114,14 +114,16 @@ float calculateAgingThreshold(const char *histogram_file);
 void dispatcher(FakeOS *os, FakePCB *pcb);
 void sched_preemption(struct FakePCB *pcb, int quantum);
 int cmp(ListItem *a, ListItem *b);
-void Prior_printQueue(FakeOS *os);
 void resetAging(FakePCB *pcb);
 void MLQ_enqueue(FakeOS *os, FakePCB *pcb);
 void MLQ_destroyArgs(void *args_);
-void MLQ_printQueue(SchedMLQArgs *sched_args);
 void MLFQ_enqueue(FakeOS *os, FakePCB *pcb);
 void MLFQ_destroyArgs(void *args_);
+
+void SJF_printQueue(FakeOS *os);
+void Prior_printQueue(FakeOS *os);
 void MLFQ_printQueue(SchedMLFQArgs *args);
+void MLQ_printQueue(SchedMLQArgs *sched_args);
 
 void *FCFSArgs(int quantum, SchedulerType scheduler);
 void *SJFArgs(int quantum, enum SchedulerType scheduler);

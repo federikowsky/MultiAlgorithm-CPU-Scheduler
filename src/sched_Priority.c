@@ -16,7 +16,8 @@ void Prior_printQueue(FakeOS *os)
         ProcPriorArgs *proc_args = (ProcPriorArgs *)pcb->args;
         ProcessEvent *e = (ProcessEvent *)pcb->events.first;
         assert(e->type == CPU);
-        printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - CurrPriority: %s -  BasePriority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(proc_args->curr_priority), print_priority(pcb->priority));
+        printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %3d - CurrPriority: %-8s -  BasePriority: %-8s\n" ANSI_RESET, 
+            pcb->pid, e->duration, print_priority(proc_args->curr_priority), print_priority(pcb->priority));
         aux = aux->next;
     }
 }
@@ -25,9 +26,7 @@ void *PriorArgs(int quantum, float aging_threshold, SchedulerType scheduler)
 {
     SchedPriorArgs *args = (SchedPriorArgs *)malloc(sizeof(SchedPriorArgs));
     if (!args)
-    {
         assert(0 && "malloc failed setting scheduler arguments");
-    }
     args->preemptive = (scheduler == PRIORITY_PREEMPTIVE);
     args->quantum = (scheduler == PRIORITY_PREEMPTIVE) ? quantum : 0;
     args->agingThreshold = aging_threshold;
@@ -52,7 +51,8 @@ void agingProc(FakeOS *os, FakePCB *pcb)
 
     if (proc_args->curr_priority > max_proc_priority)
     {
-        if (currTimer - proc_stats->last_ready_enqueue >= sched_args->agingThreshold && currTimer - proc_args->last_aging >= sched_args->agingThreshold)
+        if (currTimer - proc_stats->last_ready_enqueue >= sched_args->agingThreshold && 
+            currTimer - proc_args->last_aging >= sched_args->agingThreshold)
         {
             proc_args->last_aging = currTimer;
             proc_args->curr_priority--;

@@ -10,9 +10,7 @@ void *FCFSArgs(int quantum, SchedulerType scheduler)
 {
     SchedFCFSArgs *args = (SchedFCFSArgs *)malloc(sizeof(SchedFCFSArgs));
     if (!args)
-    {
         assert(0 && "malloc failed setting scheduler arguments");
-    }
     args->quantum = (scheduler == FCFS_PREEMPTIVE) ? quantum : 0;
     args->preemptive = (scheduler == FCFS_PREEMPTIVE);
     return args;

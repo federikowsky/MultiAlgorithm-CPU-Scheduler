@@ -10,9 +10,7 @@ void *RRArgs(int quantum, SchedulerType scheduler)
 {
     SchedRRArgs *args = (SchedRRArgs *)malloc(sizeof(SchedRRArgs));
     if (!args)
-    {
         assert(0 && "malloc failed setting scheduler arguments");
-    }
     args->quantum = quantum;
     return args;
 }

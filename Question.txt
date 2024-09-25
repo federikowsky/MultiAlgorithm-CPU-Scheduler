@@ -2,7 +2,7 @@
 - giusto vedere le statistiche cosi ? calcolo del throughput giusto ?
 - giusto calcolare il quantum come media pesata ?
 - usare variabili statiche per loadHistogram, un solo istogramma per tutti i processi?
-- priority scheduling tanti processi un core raggiungono tutti HIGH priority
+- giusto usare cosi tanto il random nella creazione dei processi ? statistiche molto variabili
 - calcolo dell aging threshold
 - aging nel MLFQ per efficienza metterlo quando processo messo in coda o quando chiamo scheduler ?
 - MLFQ va bene far partire tutti i processi nella coda 0 ?

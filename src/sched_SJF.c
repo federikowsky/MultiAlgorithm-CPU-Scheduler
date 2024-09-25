@@ -6,14 +6,26 @@
 
 #include "../include/fake_os.h"
 
+void SJF_printQueue(FakeOS *os)
+{
+	ListItem *aux = os->ready.first;
+	printf(ANSI_BLUE "\nREADY QUEUE:\n" ANSI_RESET);
+	while (aux)
+	{
+		FakePCB *pcb = (FakePCB *)aux;
+		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
+		assert(e->type == CPU);
+		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %3d - Priority: %-8s - PrevPrediction: %.6f\n" ANSI_RESET, 
+			pcb->pid, e->duration, print_priority(pcb->priority), ((ProcSJFArgs *)pcb->args)->previousPrediction);
+		aux = aux->next;
+	}
+}
+
 void *SJFArgs(int quantum, SchedulerType scheduler)
 {
 	SchedSJFArgs *args = (SchedSJFArgs *)malloc(sizeof(SchedSJFArgs));
 	if (!args)
-	{
 		assert(0 && "malloc failed setting scheduler arguments");
-	}
-
 	args->quantum = (scheduler == SJF_PREDICT_PREEMPTIVE || scheduler == SRTF) ? quantum : 0;
 	args->prediction = (scheduler == SJF_PREDICT || scheduler == SJF_PREDICT_PREEMPTIVE);
 	args->preemptive = (scheduler == SJF_PREDICT_PREEMPTIVE || scheduler == SRTF);

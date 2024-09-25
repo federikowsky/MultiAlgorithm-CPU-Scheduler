@@ -59,8 +59,6 @@ typedef struct
 
 
 
-
-
 typedef struct ProcessEvent
 {
 	ListItem list;
@@ -83,7 +81,6 @@ typedef struct FakeProcess
 {
 	ListItem list;
 	int pid;
-	void *args;
 	int arrival_time;
 	ProcessPriority priority;
 	ListHead events;

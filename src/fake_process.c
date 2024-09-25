@@ -29,6 +29,8 @@ void printProcessEvent(ListItem *item)
 void FakeProcess_SJFArgs(FakePCB *pcb)
 {
 	ProcSJFArgs *args = (ProcSJFArgs *)malloc(sizeof(ProcSJFArgs));
+	if (!args)
+		assert(0 && "malloc failed setting process args");
 	args->previousPrediction = 0;
 
 	pcb->args = args;
@@ -42,6 +44,8 @@ void FakeProcess_SJFArgs(FakePCB *pcb)
 void FakeProcess_PriorArgs(FakePCB *pcb)
 {
 	ProcPriorArgs *args = (ProcPriorArgs *)malloc(sizeof(ProcPriorArgs));
+	if (!args)
+		assert(0 && "malloc failed setting process args");
 	args->last_aging = 0;
 	args->curr_priority = pcb->priority;
 
@@ -56,6 +60,8 @@ void FakeProcess_PriorArgs(FakePCB *pcb)
 void FakeProcess_MLQArgs(FakePCB *pcb)
 {
 	ProcMLQArgs *args = (ProcMLQArgs *)malloc(sizeof(ProcMLQArgs));
+	if (!args)
+		assert(0 && "malloc failed setting process args");
 	args->queue = pcb->priority;
 
 	pcb->args = args;
@@ -69,6 +75,8 @@ void FakeProcess_MLQArgs(FakePCB *pcb)
 void FakeProcess_MLFQArgs(FakePCB *pcb)
 {
 	ProcMLFQArgs *args = (ProcMLFQArgs *)malloc(sizeof(ProcMLFQArgs));
+	if (!args)
+		assert(0 && "malloc failed setting process args");
 	args->queue = 0;
 	args->last_aging = 0;
 
