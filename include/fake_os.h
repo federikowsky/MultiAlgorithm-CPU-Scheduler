@@ -34,9 +34,11 @@ typedef enum SchedulerType
 	PRIORITY,
 	PRIORITY_PREEMPTIVE,
 	RR,
+	MLQ,
 	MLFQ,
 	MAX_SCHEDULERS // add a new scheduler before this one
 } SchedulerType;
+
 
 
 typedef struct
@@ -67,11 +69,21 @@ typedef struct
 typedef struct 
 {
 	int num_ready_queues;
+	int high_priority_queues;
+	void **schedule_args;
+	ScheduleFn *schedule_fn;
+	ListHead *ready;
+} SchedMLQArgs;
+
+typedef struct 
+{
+	int num_ready_queues;
 	void **schedule_args;
 	ScheduleFn *schedule_fn;
 	ListHead *ready;
 	unsigned int agingThreshold;
 } SchedMLFQArgs;
+
 
 
 typedef struct FakeOS
@@ -99,11 +111,14 @@ char *print_priority(ProcessPriority priority);
 // function auxiliar for the scheduler
 int weightedMeanQuantum(const char *histogram_file);
 float calculateAgingThreshold(const char *histogram_file);
-void schedule(FakeOS *os, FakePCB *pcb);
+void dispatcher(FakeOS *os, FakePCB *pcb);
 void sched_preemption(struct FakePCB *pcb, int quantum);
 int cmp(ListItem *a, ListItem *b);
 void Prior_printQueue(FakeOS *os);
 void resetAging(FakePCB *pcb);
+void MLQ_enqueue(FakeOS *os, FakePCB *pcb);
+void MLQ_destroyArgs(void *args_);
+void MLQ_printQueue(SchedMLQArgs *sched_args);
 void MLFQ_enqueue(FakeOS *os, FakePCB *pcb);
 void MLFQ_destroyArgs(void *args_);
 void MLFQ_printQueue(SchedMLFQArgs *args);
@@ -112,12 +127,14 @@ void *FCFSArgs(int quantum, SchedulerType scheduler);
 void *SJFArgs(int quantum, enum SchedulerType scheduler);
 void *PriorArgs(int quantum, float aging_threshold, enum SchedulerType scheduler);
 void *RRArgs(int quantum, enum SchedulerType scheduler);
+void *MLQArgs(int quantum);
 void *MLFQArgs(int quantum, float aging_threshold);
 
 void schedFCFS(FakeOS *os, void *args_);
 void schedSJF(FakeOS *os, void *args_);
 void schedRR(FakeOS *os, void *args_);
 void schedPriority(FakeOS *os, void *args_);
+void schedMLQ(FakeOS *os, void *args_);
 void schedMLFQ(FakeOS *os, void *args_);
 
 void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size);

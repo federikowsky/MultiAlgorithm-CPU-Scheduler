@@ -91,7 +91,7 @@ void schedPriority(FakeOS *os, void *args_)
     List_detach(&os->ready, (ListItem *)pcb);
 
     // Metti il processo nella running list (primo slot vuoto)
-    schedule(os, pcb);
+    dispatcher(os, pcb);
 
     assert(pcb->events.first);
     ProcessEvent *e = (ProcessEvent *)pcb->events.first;

@@ -30,7 +30,7 @@ void schedFCFS(struct FakeOS *os, void *args_)
     pcb->duration = 0;
 
     // put it in running list (first empty slot)
-    schedule(os, pcb);
+    dispatcher(os, pcb);
 
 	/*********************** FCFS Preemptive ***********************/
     // Preempt the current CPU burst event if it exceeds the given quantum

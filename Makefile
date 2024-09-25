@@ -8,7 +8,7 @@ TARGET := disastros
 
 # Compilatore e opzioni
 CC := gcc
-CFLAGS := --std=gnu99 -Wall -D_LIST_DEBUG_ -g 
+CFLAGS := --std=gnu99 -Wall -D_LIST_DEBUG_ -g
 AR=ar
 
 # Trova tutti i file sorgente nella cartella src/ e testing/

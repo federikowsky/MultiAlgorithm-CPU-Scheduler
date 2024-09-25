@@ -20,7 +20,8 @@ char usage_buffer[1024] = "Usage: %s <num_cores> <num_processes> <scheduler> <hi
 	7: Priority \n\
 	8: Priority preemptive \n\
 	9: Round Robin (RR) \n\
-	10: Multi-Level Feedback Queue (MLFQ) \n\
+	10: Multi-Level Queue (MLQ) \n\
+	11: Multi-Level Feedback Queue (MLFQ) \n\
 <histogram_file>: The path to the file containing the histogram data. \n\
 \n\
 Example: ./disastros 4 10 4 compiler.txt\n\
@@ -62,12 +63,15 @@ void FakeOS_printReadyQueue(FakeOS *os)
 
 	switch (os->scheduler)
 	{
-	case MLFQ:
-		MLFQ_printQueue((SchedMLFQArgs *)os->schedule_args);
-		break;
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
 		Prior_printQueue(os);
+		break;
+	case MLQ:
+		MLQ_printQueue((SchedMLQArgs *)os->schedule_args);
+		break;
+	case MLFQ:
+		MLFQ_printQueue((SchedMLFQArgs *)os->schedule_args);
 		break;
 	default:
 		aux = os->ready.first;
@@ -255,6 +259,10 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 		args = RRArgs(quantum, scheduler);
         os->schedule_fn = schedRR;
         break;
+	case MLQ:
+		args = MLQArgs(quantum);
+		os->schedule_fn = schedMLQ;
+		break;
     case MLFQ:
 		args = MLFQArgs(quantum, aging_threshold);
 		os->schedule_fn = schedMLFQ;
@@ -285,7 +293,7 @@ int FakeOS_createEventProc(FakeProcess *p, const char *filename)
 	BurstHistogram cpu_burst_hist[100], io_burst_hist[100];
 	int cpu_histogram_size, io_histogram_size;
 
-	// Generate a random number of bursts for the process
+	// Generate a random number of bursts for the process between MIN_BURST_PROCESS and MAX_BURST_PROCESS
 	int num_bursts_per_process = MIN_BURST_PROCESS + rand() % (MAX_BURST_PROCESS - MIN_BURST_PROCESS + 1);
 
 	// Load the histograms for CPU and I/O burst durations from the file
@@ -337,7 +345,6 @@ void FakeOS_createProcess(FakeOS *os, int proc_num)
 
 	new_process.pid = pid++;
 	new_process.arrival_time = rand() % 100;
-	// new_process.arrival_time = rand() % 10;
 	new_process.priority = rand() % MAX_PRIORITY;
 	List_init(&new_process.events);
 	new_process.list.prev = new_process.list.next = 0;
@@ -464,6 +471,8 @@ void FakeOS_enqueueProcess(FakeOS *os, FakePCB *pcb)
 		case CPU:
 			if (os->scheduler == MLFQ)
 				MLFQ_enqueue(os, pcb);
+			else if (os->scheduler == MLQ)
+				MLQ_enqueue(os, pcb);
 			else
 				List_pushBack(&os->ready, (ListItem *)pcb);
 			FakeOS_procUpdateStats(os, pcb, READY_ENQUEUE);
@@ -545,7 +554,6 @@ void FakeOS_simStep(FakeOS *os)
 	printf(ANSI_GREEN "\nRUNNING QUEUE:\n" ANSI_RESET);
 	while (++i < os->cores)
 	{
-		// call schedule, if defined
 		running = &os->running[i];
 
 		// if no process is running, skip this core
@@ -585,7 +593,6 @@ void FakeOS_simStep(FakeOS *os)
 	i = -1;
 	while (++i < os->cores)
 	{
-		// call schedule, if defined
 		if (!cpuFull(os->running, os->cores))
 		{
 			(*os->schedule_fn)(os, os->schedule_args);

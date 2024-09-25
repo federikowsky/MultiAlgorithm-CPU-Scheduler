@@ -61,7 +61,7 @@ int weightedMeanQuantum(const char *histogram_file)
  * @param os Pointer to the FakeOS structure.
  * @param pcb Pointer to the FakePCB structure representing the process.
  */
-void schedule(FakeOS *os, FakePCB *pcb)
+void dispatcher(FakeOS *os, FakePCB *pcb)
 {
     int i = 0;
 	FakePCB **running = os->running;

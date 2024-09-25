@@ -49,8 +49,15 @@ typedef struct
 typedef struct 
 {
 	int queue;
+} ProcMLQArgs;
+
+typedef struct 
+{
+	int queue;
 	unsigned int last_aging;
 } ProcMLFQArgs;
+
+
 
 
 

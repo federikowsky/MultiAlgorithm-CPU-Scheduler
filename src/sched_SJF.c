@@ -106,7 +106,7 @@ void schedSJF(FakeOS *os, void *args_)
 	pcb = (FakePCB *)List_detach(&os->ready, (ListItem *)pcb);
 
 	// put it in running list (first empty slot)
-	schedule(os, pcb);
+	dispatcher(os, pcb);
 
 	/*********************** SJF Preemptive ***********************/ 
 	if (args->preemptive)

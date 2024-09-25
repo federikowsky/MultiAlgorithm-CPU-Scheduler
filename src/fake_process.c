@@ -34,6 +34,11 @@ void FakeProcess_SJFArgs(FakePCB *pcb)
 	pcb->args = args;
 }
 
+/**
+ * @brief Arguments for the priority scheduler.
+ * 
+ * @param pcb The process control block to set the arguments for.
+ */
 void FakeProcess_PriorArgs(FakePCB *pcb)
 {
 	ProcPriorArgs *args = (ProcPriorArgs *)malloc(sizeof(ProcPriorArgs));
@@ -43,6 +48,24 @@ void FakeProcess_PriorArgs(FakePCB *pcb)
 	pcb->args = args;
 }
 
+/**
+ * @brief Arguments for the MLQ scheduler.
+ * 
+ * @param pcb The process control block to set the arguments for.
+ */
+void FakeProcess_MLQArgs(FakePCB *pcb)
+{
+	ProcMLQArgs *args = (ProcMLQArgs *)malloc(sizeof(ProcMLQArgs));
+	args->queue = pcb->priority;
+
+	pcb->args = args;
+}
+
+/**
+ * @brief Arguments for the MLFQ scheduler.
+ * 
+ * @param pcb The process control block to set the arguments for.
+ */
 void FakeProcess_MLFQArgs(FakePCB *pcb)
 {
 	ProcMLFQArgs *args = (ProcMLFQArgs *)malloc(sizeof(ProcMLFQArgs));
@@ -69,6 +92,9 @@ void FakeProcess_setArgs(FakePCB *pcb, SchedulerType scheduler)
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
 		FakeProcess_PriorArgs(pcb);
+		break;
+	case MLQ:
+		FakeProcess_MLQArgs(pcb);
 		break;
 	case MLFQ:
 		FakeProcess_MLFQArgs(pcb);
