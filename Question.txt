@@ -1,3 +1,6 @@
 - aging deve essere reimpostato dopo fine cpu_burst anche con scheduler preemptive? se si come?
 - giusto vedere le statistiche cosi ?
 - giusto calcolare il quantum come media pesata ?
+- usare variabili statiche per loadHistogram, un solo istogramma per tutti i processi?
+- priority scheduling tanti processi un core raggiungono tutti HIGH priority
+- calcolo dell aging threshold

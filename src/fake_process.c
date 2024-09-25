@@ -37,9 +37,17 @@ void FakeProcess_SJFArgs(FakePCB *pcb)
 void FakeProcess_PriorArgs(FakePCB *pcb)
 {
 	ProcPriorArgs *args = (ProcPriorArgs *)malloc(sizeof(ProcPriorArgs));
-	args->agingThreshold = calculateAgingThreshold((BurstHistogram *)pcb->args, 10);
 	args->last_aging = 0;
 	args->curr_priority = pcb->priority;
+
+	pcb->args = args;
+}
+
+void FakeProcess_MLFQArgs(FakePCB *pcb)
+{
+	ProcMLFQArgs *args = (ProcMLFQArgs *)malloc(sizeof(ProcMLFQArgs));
+	args->queue = 0;
+	args->last_aging = 0;
 
 	pcb->args = args;
 }
@@ -61,6 +69,9 @@ void FakeProcess_setArgs(FakePCB *pcb, SchedulerType scheduler)
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
 		FakeProcess_PriorArgs(pcb);
+		break;
+	case MLFQ:
+		FakeProcess_MLFQArgs(pcb);
 		break;
 	default:
 		pcb->args = NULL;

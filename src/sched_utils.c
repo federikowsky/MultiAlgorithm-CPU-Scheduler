@@ -11,14 +11,19 @@
  * @param size The size of the array.
  * @return the calculated aging threshold value
  */
-float calculateAgingThreshold(const BurstHistogram *hist, int size)
+float calculateAgingThreshold(const char *histogram_file)
 {
-    float aging_threshold = 0.0;
+    int cpu_count = 0, io_count = 0;
+	BurstHistogram cpu_hist[100], io_hist[100];
+
+    static float aging_threshold = 0.0;
     
     if (aging_threshold)
         return aging_threshold;
 
-    float mean = calculateWeightedMean(hist, size);
+	FakeOS_loadHistogram(histogram_file, cpu_hist, &cpu_count, io_hist, &io_count);
+
+    float mean = calculateWeightedMean(cpu_hist, cpu_count);
 
     aging_threshold = mean * AGING_FACTOR;
 
@@ -58,12 +63,12 @@ int weightedMeanQuantum(const char *histogram_file)
  */
 void schedule(FakeOS *os, FakePCB *pcb)
 {
-    FakeOS_procUpdateStats(os, pcb, WAITING_TIME); 
     int i = 0;
 	FakePCB **running = os->running;
 	while (running[i])
 		++i;
 	running[i] = pcb;   
+    FakeOS_procUpdateStats(os, pcb, WAITING_TIME); 
 }
 
 /**
@@ -93,9 +98,11 @@ void sched_preemption(FakePCB *pcb, int quantum)
         // Update the duration of the current CPU burst event
         event->duration -= quantum;
 
+        pcb->quantum_used = 1;
+
         // Add the new CPU burst event to the process's event list
         List_pushFront(&pcb->events, (ListItem *)newEvent);
-    } 
+    }
 }
 
 /**

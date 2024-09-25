@@ -34,6 +34,7 @@ typedef enum procstatstype
 } ProcStatsType;
 
 
+
 typedef struct
 {
     double previousPrediction;
@@ -41,10 +42,17 @@ typedef struct
 
 typedef struct
 {
-	int agingThreshold;
 	unsigned int last_aging;
 	ProcessPriority curr_priority;
 } ProcPriorArgs;
+
+typedef struct 
+{
+	int queue;
+	unsigned int last_aging;
+} ProcMLFQArgs;
+
+
 
 typedef struct ProcessEvent
 {
@@ -79,9 +87,10 @@ typedef struct FakePCB
 	ListItem list;
 	int pid;
 	int duration;
-	ProcessPriority priority;
+	int quantum_used;
 	void *args;
 	ProcessStats *stats;
+	ProcessPriority priority;
 	ListHead events;
 } FakePCB;
 

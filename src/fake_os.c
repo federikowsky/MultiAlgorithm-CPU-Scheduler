@@ -56,7 +56,32 @@ void printPCB(ListItem *item)
 	// List_print(&pcb->events, printProcessEvent);
 }
 
+void FakeOS_printReadyQueue(FakeOS *os)
+{
+	ListItem *aux;
 
+	switch (os->scheduler)
+	{
+	case MLFQ:
+		MLFQ_printQueue((SchedMLFQArgs *)os->schedule_args);
+		break;
+	case PRIORITY:
+	case PRIORITY_PREEMPTIVE:
+		Prior_printQueue(os);
+		break;
+	default:
+		aux = os->ready.first;
+		printf(ANSI_BLUE "\nREADY QUEUE:\n" ANSI_RESET);
+		while (aux)
+		{
+			FakePCB *pcb = (FakePCB *)aux;
+			ProcessEvent *e = (ProcessEvent *)pcb->events.first;
+			assert(e->type == CPU);
+			printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->priority));
+			aux = aux->next;
+		}
+	}
+}
 
 
 /**
@@ -205,6 +230,7 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 
     void *args;  // Variabile generica per gestire i diversi tipi di args
 	int quantum = weightedMeanQuantum(os->histogram_file); 
+	float aging_threshold = calculateAgingThreshold(os->histogram_file);
 
     switch (scheduler)
     {
@@ -222,7 +248,7 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
         break;
 	case PRIORITY:
 	case PRIORITY_PREEMPTIVE:
-		args = PriorArgs(quantum, scheduler);
+		args = PriorArgs(quantum, aging_threshold, scheduler);
 		os->schedule_fn = schedPriority;
 		break;
 	case RR:
@@ -230,7 +256,8 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
         os->schedule_fn = schedRR;
         break;
     case MLFQ:
-		assert(0 && "MLFQ not implemented");
+		args = MLFQArgs(quantum, aging_threshold);
+		os->schedule_fn = schedMLFQ;
         break;
 
     default:
@@ -310,6 +337,7 @@ void FakeOS_createProcess(FakeOS *os, int proc_num)
 
 	new_process.pid = pid++;
 	new_process.arrival_time = rand() % 100;
+	// new_process.arrival_time = rand() % 10;
 	new_process.priority = rand() % MAX_PRIORITY;
 	List_init(&new_process.events);
 	new_process.list.prev = new_process.list.next = 0;
@@ -360,37 +388,21 @@ void FakeOS_createPcb(FakeOS *os, FakeProcess *p)
 		aux = aux->next;
 	}
 
-	// all fine, no such pcb exists
+	// all fine, no such pcb exists, we can create it
 	FakePCB *new_pcb = (FakePCB *)malloc(sizeof(FakePCB));
 	new_pcb->list.next = new_pcb->list.prev = 0;
 	new_pcb->pid = p->pid;
 	new_pcb->events = p->events;
 	new_pcb->priority = p->priority;
 	new_pcb->duration = 0;
+	new_pcb->quantum_used = 0;
 	new_pcb->stats = FakeProcess_initiStats();
 	FakeProcess_setArgs(new_pcb, os->scheduler);
 	FakeOS_procUpdateStats(os, new_pcb, ARRIVAL_TIME); 
      
 	assert(new_pcb->events.first && "process without events");
 
-	// depending on the type of the first event
-	// we put the process either in ready or in waiting
-	ProcessEvent *e = (ProcessEvent *)new_pcb->events.first;
-	switch (e->type)
-	{
-	case CPU:
-		List_pushBack(&os->ready, (ListItem *)new_pcb);
-		// FakeOS_procUpdateStats(os, new_pcb, READY_ENQUEUE);
-		printf(ANSI_ORANGE "\t\tmove to ready\n" ANSI_RESET);
-		break;
-	case IO:
-		List_pushBack(&os->waiting, (ListItem *)new_pcb);
-		printf(ANSI_YELLOW "\t\tmove to waiting\n" ANSI_RESET);
-		break;
-	default:
-		assert(0 && "illegal resource");
-		;
-	}
+	FakeOS_enqueueProcess(os, new_pcb);
 }
 
 /**
@@ -435,6 +447,43 @@ void FakeOS_procUpdateStats(FakeOS *os, FakePCB *pcb, ProcStatsType type)
 	}
 }
 
+/**
+ * @brief Enqueue a process in the ready or waiting list
+ *
+ * @param os
+ * @param pcb
+ * @param old_event_type
+ */
+void FakeOS_enqueueProcess(FakeOS *os, FakePCB *pcb)
+{
+	if (pcb->events.first)
+	{
+		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
+		switch (e->type)
+		{
+		case CPU:
+			if (os->scheduler == MLFQ)
+				MLFQ_enqueue(os, pcb);
+			else
+				List_pushBack(&os->ready, (ListItem *)pcb);
+			FakeOS_procUpdateStats(os, pcb, READY_ENQUEUE);
+			printf(ANSI_ORANGE "\t\t[!] move to ready\n" ANSI_RESET);
+			break;
+		case IO:
+			// if the process requires I/O, we put it in the waiting list and increment the priority
+			List_pushBack(&os->waiting, (ListItem *)pcb);
+			printf(ANSI_YELLOW "\t\t[!] move to waiting\n" ANSI_RESET);
+			break;
+		}
+	}
+	else
+	{
+		List_pushBack(&os->terminated_stats, (ListItem *)pcb->stats);
+		FakeOS_procUpdateStats(os, pcb, COMPLETE_TIME);
+		FakeOS_destroyPCB(pcb);
+		printf(ANSI_RED "\t\t[-] end process\n" ANSI_RESET);
+	}
+}
 
 /**
  * @brief Simulate a step of the fake OS process scheduler
@@ -445,12 +494,6 @@ void FakeOS_simStep(FakeOS *os)
 {
 	printf("\n************** TIME: %08d **************\n", os->timer);
 
-	/*
-	Scan the list of processes waiting to be started
-	Create all processes that are scheduled to start at the current time
-	Place the newly created processes in the ready list or waiting list
-	depending on the type of their first event
-	*/
 	ListItem *aux = os->processes.first;
 	while (aux)
 	{
@@ -474,8 +517,7 @@ void FakeOS_simStep(FakeOS *os)
 	}
 
 	/********************************* WAITING QUEUE *********************************/
-
-	// scan waiting list, and put in ready all items whose event terminates
+	
 	aux = os->waiting.first;
 	printf(ANSI_MAGENTA "\nWAITING QUEUE:\n" ANSI_RESET);
 	while (aux)
@@ -489,47 +531,14 @@ void FakeOS_simStep(FakeOS *os)
 		{
 			List_popFront(&pcb->events);
 			free(e);
-			e = 0;
 			List_detach(&os->waiting, (ListItem *)pcb);
-			if (pcb->events.first)
-			{
-				// handle next event
-				e = (ProcessEvent *)pcb->events.first;
-				switch (e->type)
-				{
-				case CPU:
-					List_pushBack(&os->ready, (ListItem *)pcb);
-					FakeOS_procUpdateStats(os, pcb, READY_ENQUEUE); 
-					printf(ANSI_ORANGE "\t\t[!] end burst -> move to ready\n" ANSI_RESET);
-					break;
-				case IO:
-					List_pushBack(&os->waiting, (ListItem *)pcb);
-					printf(ANSI_YELLOW "\t\t[!] end burst -> move to waiting\n" ANSI_RESET);
-					break;
-				}
-			}
-			else
-			{
-				FakeOS_procUpdateStats(os, pcb, COMPLETE_TIME); 
-				List_pushBack(&os->terminated_stats, (ListItem *)pcb->stats); 
 
-				// kill process
-				FakeOS_destroyPCB(pcb);
-				printf(ANSI_RED "\t\t[-] end process\n" ANSI_RESET);
-				pcb = 0;
-			}
+			FakeOS_enqueueProcess(os, pcb);
 		}
 	}
 
 	/********************************* RUNNING QUEUE *********************************/
-
-	/*
-	scan running list, and put in ready all items whose event terminates
-	decrement the duration of running
-	if event over, destroy event
-	and reschedule process
-	if last event, destroy running
-	*/
+	
 	FakePCB **running;
 	int i = -1;
 	int cpu_using = 0;
@@ -555,34 +564,8 @@ void FakeOS_simStep(FakeOS *os)
 			{
 				List_popFront(&(*running)->events);
 				free(e);
-				e = 0;
-				if ((*running)->events.first)
-				{
-					e = (ProcessEvent *)(*running)->events.first;
-					switch (e->type)
-					{
-					case CPU:
-						FakeOS_procUpdateStats(os, *running, READY_ENQUEUE); 
-						List_pushBack(&os->ready, (ListItem *)*running);
-						printf(ANSI_ORANGE "\t\t[!] end burst -> move to ready\n" ANSI_RESET);
-						break;
-					case IO:
-						// caso priority scheduling
-						// se il processo ha completato un burst di CPU, resetta la priorità
-						List_pushBack(&os->waiting, (ListItem *)*running);
-						printf(ANSI_YELLOW "\t\t[!] end burst -> move to waiting\n" ANSI_RESET);
-						break;
-					}
-				}
-				else
-				{
-					FakeOS_procUpdateStats(os, *running, COMPLETE_TIME); 
-					List_pushBack(&os->terminated_stats, (ListItem *)((*running)->stats)); 
-
-					// kill process
-					FakeOS_destroyPCB(*running);
-					printf(ANSI_RED "\t\t[-] end process\n" ANSI_RESET);
-				}
+				FakeOS_enqueueProcess(os, *running);
+				
 				// set running to 0 to signal that the core is free
 				*running = 0;
 			}
@@ -595,17 +578,7 @@ void FakeOS_simStep(FakeOS *os)
 
 	/********************************* READY QUEUE *********************************/
 
-	// scan ready list, and print the pid of the process in the ready list
-	aux = os->ready.first;
-	printf(ANSI_BLUE "\nREADY QUEUE:\n" ANSI_RESET);
-	while (aux)
-	{
-		FakePCB *pcb = (FakePCB *)aux;
-		ProcessEvent *e = (ProcessEvent *)pcb->events.first;
-		assert(e->type == CPU);
-		printf(ANSI_BLUE "\tPID: %2d - CPU_burst: %2d - Priority: %s\n" ANSI_RESET, pcb->pid, e->duration, print_priority(pcb->priority));
-		aux = aux->next;
-	}
+	FakeOS_printReadyQueue(os);
 
 	/********************************* SCHEDULING *********************************/
 
@@ -613,7 +586,7 @@ void FakeOS_simStep(FakeOS *os)
 	while (++i < os->cores)
 	{
 		// call schedule, if defined
-		if (os->schedule_fn && !cpuFull(os->running, os->cores))
+		if (!cpuFull(os->running, os->cores))
 		{
 			(*os->schedule_fn)(os, os->schedule_args);
 		}
@@ -685,7 +658,17 @@ void FakeOS_destroy(FakeOS *os)
 {
 	free(os->running);
 	if (os->schedule_args)
-		free(os->schedule_args);
+	{
+		switch (os->scheduler)
+		{
+			case MLFQ:
+				MLFQ_destroyArgs(os->schedule_args);
+				break;
+			default:
+				free(os->schedule_args);
+				break;
+		}
+	}
 
 	ListItem *aux = os->terminated_stats.first;
 	while (aux)
@@ -693,7 +676,6 @@ void FakeOS_destroy(FakeOS *os)
 		ProcessStats *stats = (ProcessStats *)aux;
 		aux = aux->next;
 		free(stats);
-		stats = 0;
 	}
 	os->running = 0;
 	os->schedule_args = 0;

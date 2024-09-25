@@ -17,6 +17,7 @@
 #define PREDICTION_WEIGHT 0.125 // 1/8 
 #define AGING_TIME 100
 #define AGING_FACTOR 5 // 5 times the mean burst time
+#define MLFQ_QUEUES 5
 
 
 struct FakeOS;
@@ -60,8 +61,17 @@ typedef struct
 {
 	int preemptive;
 	int quantum;
+	unsigned int agingThreshold;
 } SchedPriorArgs;
 
+typedef struct 
+{
+	int num_ready_queues;
+	void **schedule_args;
+	ScheduleFn *schedule_fn;
+	ListHead *ready;
+	unsigned int agingThreshold;
+} SchedMLFQArgs;
 
 
 typedef struct FakeOS
@@ -84,25 +94,32 @@ typedef struct FakeOS
 
 
 void printPCB(ListItem *item);
+char *print_priority(ProcessPriority priority);
 
 // function auxiliar for the scheduler
 int weightedMeanQuantum(const char *histogram_file);
-float calculateAgingThreshold(const BurstHistogram *hist, int size);
+float calculateAgingThreshold(const char *histogram_file);
 void schedule(FakeOS *os, FakePCB *pcb);
 void sched_preemption(struct FakePCB *pcb, int quantum);
 int cmp(ListItem *a, ListItem *b);
+void Prior_printQueue(FakeOS *os);
 void resetAging(FakePCB *pcb);
+void MLFQ_enqueue(FakeOS *os, FakePCB *pcb);
+void MLFQ_destroyArgs(void *args_);
+void MLFQ_printQueue(SchedMLFQArgs *args);
 
 void *FCFSArgs(int quantum, SchedulerType scheduler);
 void *SJFArgs(int quantum, enum SchedulerType scheduler);
-void *PriorArgs(int quantum, enum SchedulerType scheduler);
+void *PriorArgs(int quantum, float aging_threshold, enum SchedulerType scheduler);
 void *RRArgs(int quantum, enum SchedulerType scheduler);
+void *MLFQArgs(int quantum, float aging_threshold);
 
 void schedFCFS(FakeOS *os, void *args_);
 void schedSJF(FakeOS *os, void *args_);
 void schedRR(FakeOS *os, void *args_);
 void schedPriority(FakeOS *os, void *args_);
-
+void schedMLFQ(FakeOS *os, void *args_);
 
 void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size);
 void FakeOS_procUpdateStats(FakeOS *os, FakePCB *pcb, ProcStatsType type);
+void FakeOS_enqueueProcess(FakeOS *os, FakePCB *pcb);
