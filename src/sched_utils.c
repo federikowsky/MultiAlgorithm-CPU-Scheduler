@@ -19,7 +19,9 @@ float calculateAgingThreshold(const char *histogram_file)
     static float aging_threshold = 0.0;
     
     if (aging_threshold)
+    {
         return aging_threshold;
+    }
 
 	FakeOS_loadHistogram(histogram_file, cpu_hist, &cpu_count, io_hist, &io_count);
 

@@ -671,6 +671,9 @@ void FakeOS_destroy(FakeOS *os)
 			case MLFQ:
 				MLFQ_destroyArgs(os->schedule_args);
 				break;
+			case MLQ:
+				MLQ_destroyArgs(os->schedule_args);
+				break;
 			default:
 				free(os->schedule_args);
 				break;
