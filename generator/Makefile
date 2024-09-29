@@ -1,10 +1,10 @@
 # Definizione dei percorsi
-SRC_DIR := scheduler/src
-BUILD_DIR := scheduler/build
-TEST_DIR := scheduler/testing
+SRC_DIR := src
+BUILD_DIR := build
+TEST_DIR := testing
 
 # Nome dell'eseguibile
-TARGET := disastros
+TARGET := trace_generator
 
 # Compilatore e opzioni
 CC := gcc
