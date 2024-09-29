@@ -4,14 +4,16 @@
 #include <assert.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "../include/trace_generator.h"
 
-char usage_buffer[1024] = "Usage: %s <num_process> <num_burst_per_process> <histogram_folder> \n\
+char usage_buffer[1024] = "Usage: %s <num_process> <num_burst_per_process> <histogram_folder> <dest_folder> \n\
 \n\
 <num_process>: Number of processes to create and simulate. \n\
 <burst_per_process>: Number of burst per process. \n\
 <histogram_folder>: The path to the folder containing the histogram data. \n\
+<dest_folder>: The path to the folder where the traces will be saved. NOTE! all the files in the folder will be deleted. if the folder does not exist it will be created. \n\
 \n";
 
 /**
@@ -105,20 +107,25 @@ int getBurstDuration(BurstDist *hist, int size, int num_samples)
  * @param os The fake OS instance
  * @param proc_num The process number to create
  */
-void createEventProc(BurstProfile *bf, int proc_id, int bursts_per_process)
+void createEventProc(BurstProfile *bf, int proc_id, int bursts_per_process, const char *dest_folder)
 {
     // create file for the process events
     char filename[256], burst_type[8];
     FILE *file;
-    int burst_time;
+    int burst_time, priority, arrival;
 
-    sprintf(filename, "../traces/process_%d.txt", proc_id);
+    
+    sprintf(filename, "%s/process_%d.txt", dest_folder, proc_id);
     if((file = fopen(filename, "w")) == NULL)
         assert(file && "Could not open file");
 
+
     // write the process id to the file and the number of bursts
-    if ((fprintf(file, "# Proc: %-3d Burst_num: %-3d From: %s\n", proc_id, bursts_per_process, bf->source_type)) < 0)
+    priority = rand() % MAX_PRIORITY;
+    arrival = rand() % 100;
+    if (fprintf(file, "# Proc: %-3d Burst_num: %-3d From: %s\nPriority: %d\nArrival: %d\n", proc_id, bursts_per_process, bf->source_type, priority, arrival) < 0)
         assert(0 && "fprintf failed");
+
 
 	// Create a number of bursts for the process based on the number of bursts per process
 	// and the histograms for CPU and I/O burst
@@ -266,7 +273,7 @@ int main(int argc, char **argv)
     struct dirent   *ent;
 
 
-    if (argc != 4)
+    if (argc != 5)
     {
         printf(usage_buffer, argv[0]);
         return 1;
@@ -277,11 +284,26 @@ int main(int argc, char **argv)
     int num_processes = atoi(argv[1]);
     int burst_per_process = atoi(argv[2]);
     const char *histogram_folder = argv[3];
+    const char *dest_folder = argv[4];
 
     if (num_processes < 1 || burst_per_process < 1)
     {
         printf(usage_buffer, argv[0]);
         return 1;
+    }
+
+    // Create the destination folder if it does not exist
+    struct stat st = {0};
+    if (stat(dest_folder, &st) == -1)
+    {
+        mkdir(dest_folder, 0700);
+    } 
+    // Delete all the files in the folder
+    else
+    {
+        char cmd[256];
+        sprintf(cmd, "rm -f %s/*", dest_folder);
+        system(cmd);
     }
 
     TraceGen_init(&tg, num_processes, burst_per_process, histogram_folder);
@@ -308,7 +330,7 @@ int main(int argc, char **argv)
     {
         int profile_index = rand() % tg.burst_profiles.size;
         BurstProfile *bf = (BurstProfile *)List_getAt(&tg.burst_profiles, profile_index);
-        createEventProc(bf, i, burst_per_process);
+        createEventProc(bf, i, burst_per_process, dest_folder);
     }
 
     // Free the memory allocated for the histograms

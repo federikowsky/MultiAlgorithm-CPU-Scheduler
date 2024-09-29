@@ -5,9 +5,9 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "../include/fake_os.h"
+#include "../include/trace_generator.h"
 
-void histogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size)
+void histogram(const char *filename, BurstDist *cpu_hist, int *cpu_size, BurstDist *io_hist, int *io_size)
 {
     char line[256];
     int is_cpu = 0, is_io = 0;
@@ -17,8 +17,8 @@ void histogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, Bu
 	assert(file && "file not found");
 
     // Temporary arrays to store burst histograms
-    static BurstHistogram temp_cpu[100];
-    static BurstHistogram temp_io[100];
+    static BurstDist temp_cpu[100];
+    static BurstDist temp_io[100];
 
     while (fgets(line, sizeof(line), file))
 	{
@@ -67,8 +67,8 @@ void histogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, Bu
     fclose(file);
 
     // Copy data from temp arrays
-    memcpy(cpu_hist, temp_cpu, cpu_count * sizeof(BurstHistogram));
-    memcpy(io_hist, temp_io, io_count * sizeof(BurstHistogram));
+    memcpy(cpu_hist, temp_cpu, cpu_count * sizeof(BurstDist));
+    memcpy(io_hist, temp_io, io_count * sizeof(BurstDist));
 
 	*cpu_size = cpu_count;
 	*io_size = io_count;
@@ -77,7 +77,7 @@ void histogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, Bu
 
 // Funzione di test per verificare la corretta generazione dei burst
 void test_generateBurstDuration(const char *filename) {
-    BurstHistogram cpu_burst_hist[100], io_burst_hist[100];
+    BurstDist cpu_burst_hist[100], io_burst_hist[100];
     int cpu_histogram_size, io_histogram_size;
 
     histogram(filename, cpu_burst_hist, &cpu_histogram_size, io_burst_hist, &io_histogram_size);
@@ -141,11 +141,6 @@ void test_generateBurstDuration(const char *filename) {
         int tolerance = expected * 0.15; // Tolleranza del 15%
         assert(io_counts[i] > expected - tolerance && io_counts[i] < expected + tolerance);
     }
-
-    // free(cpu_burst_hist);
-    // free(io_burst_hist);
-    // free(cpu_counts);
-    // free(io_counts);
 }
 
 

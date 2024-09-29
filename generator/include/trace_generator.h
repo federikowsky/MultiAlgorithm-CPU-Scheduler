@@ -2,6 +2,18 @@
 
 #include "linked_list.h"
 
+typedef enum processPriority
+{
+	REALTIME,
+	HIGH,
+	NORMAL,
+	IDLE,
+	BATCH,
+	MAX_PRIORITY // add a new priority before this one
+} ProcessPriority;
+
+
+
 typedef struct {
     int burst_time; 
     float probability;
