@@ -4,57 +4,6 @@
 
 #include "../include/fake_os.h"
 
-/**
- * @brief Calculate the aging threshold based on the provided histogram file, to be used in aging scheduling
- * and prevent starvation of low priority processes. 
- *
- * @param cpu_hist The array of CPU burst histograms.
- * @param size The size of the array.
- * @return the calculated aging threshold value
- */
-float calculateAgingThreshold(const char *histogram_file)
-{
-    int cpu_count = 0, io_count = 0;
-	BurstHistogram cpu_hist[100], io_hist[100];
-
-    static float aging_threshold = 0.0;
-    
-    if (aging_threshold)
-    {
-        return aging_threshold;
-    }
-
-	FakeOS_loadHistogram(histogram_file, cpu_hist, &cpu_count, io_hist, &io_count);
-
-    float mean = calculateWeightedMean(cpu_hist, cpu_count);
-
-    aging_threshold = mean * AGING_FACTOR;
-
-    return aging_threshold;
-}
-
-/**
- * @brief the weighted mean quantum based on the provided histogram file.
- * 
- * @param histogram_file The path to the histogram file.
- * @return The calculated weighted mean quantum.
- */
-int weightedMeanQuantum(const char *histogram_file)
-{
-	int cpu_count = 0, io_count = 0;
-	BurstHistogram cpu_hist[100], io_hist[100];
-
-	static int quantum = 0;
-
-	if (quantum)
-		return quantum;
-
-	FakeOS_loadHistogram(histogram_file, cpu_hist, &cpu_count, io_hist, &io_count);
-
-	quantum = (int) calculateWeightedMean(cpu_hist, cpu_count);
-
-    return quantum;
-}
 
 /**
  * @brief Schedule a process to run on a core.

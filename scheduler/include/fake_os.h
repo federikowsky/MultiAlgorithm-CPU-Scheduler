@@ -2,7 +2,6 @@
 
 #include "fake_process.h"
 #include "linked_list.h"
-#include "stats.h"
 
 #define ANSI_ORANGE "\x1b[38;5;208m"
 #define ANSI_GREY "\x1b[38;5;240m"
@@ -15,7 +14,6 @@
 #define ANSI_RESET "\x1b[0m"
 
 #define PREDICTION_WEIGHT 0.125 // 1/8 
-#define AGING_TIME 100
 #define AGING_FACTOR 5 // 5 times the mean burst time
 #define MLFQ_QUEUES 5
 
@@ -96,7 +94,6 @@ typedef struct FakeOS
 	SchedulerType scheduler;
 	ScheduleFn schedule_fn;
 	void *schedule_args; 
-	const char *histogram_file;
 	ListHead processes;
 
 	// Statistiche
@@ -109,8 +106,6 @@ void printPCB(ListItem *item);
 char *print_priority(ProcessPriority priority);
 
 // function auxiliar for the scheduler
-int weightedMeanQuantum(const char *histogram_file);
-float calculateAgingThreshold(const char *histogram_file);
 void dispatcher(FakeOS *os, FakePCB *pcb);
 void sched_preemption(struct FakePCB *pcb, int quantum);
 int cmp(ListItem *a, ListItem *b);
@@ -139,6 +134,5 @@ void schedPriority(FakeOS *os, void *args_);
 void schedMLQ(FakeOS *os, void *args_);
 void schedMLFQ(FakeOS *os, void *args_);
 
-void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size);
 void FakeOS_procUpdateStats(FakeOS *os, FakePCB *pcb, ProcStatsType type);
 void FakeOS_enqueueProcess(FakeOS *os, FakePCB *pcb);

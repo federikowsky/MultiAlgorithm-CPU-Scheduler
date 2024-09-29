@@ -5,11 +5,11 @@
 #include <time.h>
 
 #include "../include/fake_os.h"
+#include <dirent.h>
 
-char usage_buffer[1024] = "Usage: %s <num_cores> <num_processes> <scheduler> <histogram_file> \n\
+char usage_buffer[1024] = "Usage: %s <num_cores> <scheduler> <quantum> <traces_folder> \n\
 \n\
 <num_cores>: Number of cores to simulate the processes on. \n\
-<num_processes>: Number of processes to create and simulate. \n\
 <scheduler>: The scheduling algorithm to use: \n\
 	1: First Come First Served (FCFS) \n\
 	2: First Come First Served (FCFS) preemptive \n\
@@ -22,12 +22,13 @@ char usage_buffer[1024] = "Usage: %s <num_cores> <num_processes> <scheduler> <hi
 	9: Round Robin (RR) \n\
 	10: Multi-Level Queue (MLQ) \n\
 	11: Multi-Level Feedback Queue (MLFQ) \n\
-<histogram_file>: The path to the file containing the histogram data. \n\
+<quantum>: The quantum to use for the scheduling algorithm. \n\
+<traces_folder>: The path to the folder containing the traces. \n\
 \n\
-Example: ./disastros 4 10 4 compiler.txt\n\
+Example: %s 4 3 10 traces_folder \n\
 \n\
-This command will create 4 core and simulate 10 processes using the SJF with prediction & quantum scheduling algorithm with compiler histogram example \n";
-
+This will simulate a 4 core system using the SJF with prediction scheduling algorithm and a quantum of 10 using the traces in the traces_folder. \
+\n";
 
 char *print_priority(ProcessPriority priority)
 {
@@ -111,8 +112,7 @@ void increaseDuration(FakeOS *os)
 }
 
 /**
- * @brief Check if all cores are taken by a process
- *
+ * @brief Check if all the cores are full
  * @param running
  * @return int
  */
@@ -132,7 +132,7 @@ int cpuFull(FakePCB **running, int cores)
  *
  * @param os
  */
-void FakeOS_init(FakeOS *os, int cores, const char *histogram_file)
+void FakeOS_init(FakeOS *os, int cores)
 {
 	os->running = calloc(cores, sizeof(FakePCB *));
 	if (!os->running)
@@ -144,89 +144,7 @@ void FakeOS_init(FakeOS *os, int cores, const char *histogram_file)
 	os->timer = 0;
 	os->schedule_fn = 0;
 	os->cores = cores;
-	os->histogram_file = histogram_file;
 	os->cpu_busy_time = 0;
-}
-
-/**
- * @brief load the CPU and I/O histogram for a given file.
- *
- * @param filename The path to the file containing the data.
- * @param cpu_hist The array to store the calculated CPU history.
- * @param cpu_size The size of the `cpu_hist` array.
- * @param io_hist The array to store the calculated I/O history.
- * @param io_size The size of the `io_hist` array.
- */
-void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *cpu_size, BurstHistogram *io_hist, int *io_size)
-{
-    char line[256];
-    int is_cpu = 0, is_io = 0;
-    static int cpu_count = 0, io_count = 0;
-	static BurstHistogram cpu_hist_temp[100], io_hist_temp[100];
-    
-	if (cpu_count || io_count)
-	{
-		memcpy(cpu_hist, cpu_hist_temp, cpu_count * sizeof(BurstHistogram));
-		memcpy(io_hist, io_hist_temp, io_count * sizeof(BurstHistogram));
-		*cpu_size = cpu_count;
-		*io_size = io_count;
-		return;
-	}
-
-    FILE *file = fopen(filename, "r");
-	assert(file && "file not found");
-
-    while (fgets(line, sizeof(line), file))
-	{
-		if (line[0] == '#' || line[0] == '\n')
-            continue;
-
-        if (strncmp(line, "CPU_BURST", 9) == 0)
-		{
-            is_cpu = 1;
-            is_io = 0;
-            continue;
-        }
-        if (strncmp(line, "IO_BURST", 8) == 0)
-		{
-            is_io = 1;
-            is_cpu = 0;
-            continue;
-        }
-
-		// Find the position of comment if present
-        char *comment_pos = strchr(line, '#');
-        if (comment_pos) {
-            *comment_pos = '\0'; // Truncate the line at the comment
-        }
-
-        // Parse burst time and probability
-        int burst_time;
-        double probability;
-        if (sscanf(line, "%d %lf", &burst_time, &probability) == 2 || sscanf(line, "%d,%lf", &burst_time, &probability) == 2)
-		{
-            if (is_cpu)
-			{
-                cpu_hist_temp[cpu_count].burst_time = burst_time;
-                cpu_hist_temp[cpu_count].probability = probability;
-                cpu_count++;
-            } 
-			else if (is_io)
-			{
-                io_hist_temp[io_count].burst_time = burst_time;
-                io_hist_temp[io_count].probability = probability;
-                io_count++;
-            }
-        }
-    }
-
-    fclose(file);
-
-    // Copy data from temp arrays
-    memcpy(cpu_hist, cpu_hist_temp, cpu_count * sizeof(BurstHistogram));
-    memcpy(io_hist, io_hist_temp, io_count * sizeof(BurstHistogram));
-	*cpu_size = cpu_count;
-	*io_size = io_count;
 }
 
 /**
@@ -235,13 +153,12 @@ void FakeOS_loadHistogram(const char *filename, BurstHistogram *cpu_hist, int *c
  * @param os
  * @param scheduler
  */
-void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
+void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler, int quantum)
 {
     assert(os && "null pointer");
 
     void *args;  // Variabile generica per gestire i diversi tipi di args
-	int quantum = weightedMeanQuantum(os->histogram_file); 
-	float aging_threshold = calculateAgingThreshold(os->histogram_file);
+	float aging_threshold = quantum * AGING_FACTOR;
 
     switch (scheduler)
     {
@@ -285,89 +202,74 @@ void FakeOS_setScheduler(FakeOS *os, SchedulerType scheduler)
 }
 
 /**
- * @brief
- *
- * @param p
- * @param num_processes
- * @param num_bursts_per_process
- * @return int
- */
-int FakeOS_createEventProc(FakeProcess *p, const char *filename)
-{
-	assert(p && "null pointer");
-
-	// Definition of the histograms for CPU burst and I/O burst durations for the processes
-	BurstHistogram cpu_burst_hist[100], io_burst_hist[100];
-	int cpu_histogram_size, io_histogram_size;
-
-	// Generate a random number of bursts for the process between MIN_BURST_PROCESS and MAX_BURST_PROCESS
-	int num_bursts_per_process = 5000;
-	// int num_bursts_per_process = MIN_BURST_PROCESS + rand() % (MAX_BURST_PROCESS - MIN_BURST_PROCESS + 1);
-
-	// Load the histograms for CPU and I/O burst durations from the file
-	FakeOS_loadHistogram(filename, cpu_burst_hist, &cpu_histogram_size, io_burst_hist, &io_histogram_size);
-
-	// Create a number of bursts for the process based on the number of bursts per process
-	// and the histograms for CPU and I/O burst
-	// The process will have alternating CPU and I/O bursts
-	for (int i = 0; i < num_bursts_per_process; i++)
-	{
-		// Generate a random number to decide if the next burst is a CPU or I/O burst
-		double random_val = (double)rand() / RAND_MAX;
-
-		if (random_val < 0.5)
-		{
-			// Generate a random burst duration based on the CPU burst histogram
-			int cpu_burst = generateBurstDuration(cpu_burst_hist, cpu_histogram_size, 1);
-			ProcessEvent *cpu_event = (ProcessEvent *)malloc(sizeof(ProcessEvent));
-			cpu_event->list.prev = cpu_event->list.next = 0;
-			cpu_event->type = CPU;
-			cpu_event->duration = cpu_burst;
-			List_pushBack(&p->events, (ListItem *)cpu_event);
-		} else {
-			// Generate a random burst duration based on the I/O burst histogram
-			int io_burst = generateBurstDuration(io_burst_hist, io_histogram_size, 1);
-			ProcessEvent *io_event = (ProcessEvent *)malloc(sizeof(ProcessEvent));
-			io_event->list.prev = io_event->list.next = 0;
-			io_event->type = IO;
-			io_event->duration = io_burst;
-			List_pushBack(&p->events, (ListItem *)io_event);
-		}
-	}
-
-	// number of events for a single process, given by sum of CPU burst
-	// and I/O burst.
-	return num_bursts_per_process;
-}
-
-/**
  * @brief Create a process and put it in the list of processes to be created
  *
  * @param os The fake OS instance
  * @param proc_num The process number to create
  */
-void FakeOS_createProcess(FakeOS *os, int proc_num)
+void FakeOS_createProcess(FakeOS *os, const char *proc_file)
 {
-	static unsigned int pid = 1;
-	FakeProcess new_process = {0};
+    static unsigned int pid = 1;
+    char line[256];
 
-	new_process.pid = pid++;
-	new_process.arrival_time = rand() % 100;
-	new_process.priority = rand() % MAX_PRIORITY;
-	List_init(&new_process.events);
-	new_process.list.prev = new_process.list.next = 0;
+    // Read the process file
+    FILE *file = fopen(proc_file, "r");
+    assert(file && "file not found");
 
-	int num_events = FakeOS_createEventProc(&new_process, os->histogram_file);
-	printf("created [Process: %3d], pid: %3d, events: %3d, arrival_time: %3d, priority_level: %2s\n",
-		   proc_num, new_process.pid, num_events, new_process.arrival_time, print_priority(new_process.priority));
-	if (num_events)
-	{
-		FakeProcess *new_process_ptr = (FakeProcess *)malloc(sizeof(FakeProcess));
-		if (!new_process_ptr)
-			assert(0 && "malloc failed creating process");
-		*new_process_ptr = new_process;
-		List_pushBack(&os->processes, (ListItem *)new_process_ptr);
-	}
+    // Allocate memory for the new process
+    FakeProcess *new_process = (FakeProcess *)malloc(sizeof(FakeProcess));
+    if (!new_process)
+        assert(0 && "malloc failed creating process");
+
+    new_process->pid = pid++;
+
+    while (fgets(line, sizeof(line), file))
+    {
+        if (line[0] == '#' || line[0] == '\n')
+            continue;
+
+        // Find the position of comment if present
+        char *comment_pos = strchr(line, '#');
+        if (comment_pos)
+        {
+            *comment_pos = '\0'; // Truncate the line at the comment
+        }
+
+        // Parse the line
+        if (strncmp(line, "Arrival", 7) == 0)
+            sscanf(line, "Arrival %d", &new_process->arrival_time);
+
+        else if (strncmp(line, "Priority", 8) == 0)
+            sscanf(line, "Priority %d", &new_process->priority);
+
+        else if (strncmp(line, "CPU", 3) == 0 || strncmp(line, "IO", 2) == 0)
+        {
+            ProcessEvent *new_event = (ProcessEvent *)malloc(sizeof(ProcessEvent));
+            if (!new_event)
+                assert(0 && "malloc failed creating event");
+
+            // Determina il tipo di evento e salva il valore
+            if (strncmp(line, "CPU", 3) == 0)
+            {
+                new_event->type = CPU;
+                sscanf(line, "CPU %d", &new_event->duration);
+            }
+            else
+            {
+                new_event->type = IO;
+                sscanf(line, "IO %d", &new_event->duration);
+            }
+            
+            // Inizializza i puntatori della lista
+            new_event->list.next = new_event->list.prev = 0;
+            List_pushBack(&new_process->events, (ListItem *)new_event);
+        }
+    }
+
+    fclose(file);
+    List_pushBack(&os->processes, (ListItem *)new_process);
+
+    printf(ANSI_GREEN "\t[+] process created\n" ANSI_RESET);
 }
 
 /**
@@ -725,24 +627,39 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	int num_cores = atoi(argv[1]);
-	int num_processes = atoi(argv[2]);
-	int scheduler = atoi(argv[3]) - 1;
-	const char *histogram_file = argv[4];
+	int scheduler = atoi(argv[2]) - 1;
+	int quantum = atoi(argv[3]);
+	const char *traces_folder = argv[4];
 
-	if (num_cores < 1 || num_processes < 1 || scheduler < 0 || scheduler >= MAX_SCHEDULERS)
+	if (num_cores < 1 || scheduler < 0 || scheduler >= MAX_SCHEDULERS)
 	{
 		printf(usage_buffer, argv[0]);
 		return 1;
 	}
 
-	FakeOS_init(&os, num_cores, histogram_file);
-	FakeOS_setScheduler(&os, scheduler);
+	FakeOS_init(&os, num_cores);
+	FakeOS_setScheduler(&os, scheduler, quantum);
 
-	// create the processes and put them in the processes list
-	for (int i = 0; i < num_processes; ++i)
+	// read from traces folder the process and create them
+	DIR *dir;
+	struct dirent *ent;
+	if ((dir = opendir(traces_folder)) == NULL)
 	{
-		FakeOS_createProcess(&os, i);
+		perror("Could not open directory");
+		return 1;
 	}
+
+	while ((ent = readdir(dir)) != NULL)
+	{
+		if (ent->d_type == DT_REG)
+		{
+			char filename[256];
+			sprintf(filename, "%s/%s", traces_folder, ent->d_name);
+			printf("Reading from file: %s\n", filename);
+			FakeOS_createProcess(&os, filename);	
+		}
+	}
+	closedir(dir);
 
 	// run the simulation until all processes are terminated and all queues are empty
 	// memcmp returns 0 if the two arrays are equal (in this case, all the pointers are NULL)

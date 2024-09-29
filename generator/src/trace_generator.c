@@ -123,7 +123,10 @@ void createEventProc(BurstProfile *bf, int proc_id, int bursts_per_process, cons
     // write the process id to the file and the number of bursts
     priority = rand() % MAX_PRIORITY;
     arrival = rand() % 100;
-    if (fprintf(file, "# Proc: %-3d Burst_num: %-3d From: %s\nPriority: %d\nArrival: %d\n", proc_id, bursts_per_process, bf->source_type, priority, arrival) < 0)
+    if (fprintf(file, "# Proc: %-3d Burst_num: %-3d From: %s\n", proc_id, bursts_per_process, bf->source_type) < 0)
+        assert(0 && "fprintf failed");
+
+    if (fprintf(file, "Priority %d\nArrival %d\n", priority, arrival) < 0)
         assert(0 && "fprintf failed");
 
 

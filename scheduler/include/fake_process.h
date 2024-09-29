@@ -1,7 +1,6 @@
 #pragma once
 
 #include "linked_list.h"
-#include "stats.h"
 
 
 // forward declaration
