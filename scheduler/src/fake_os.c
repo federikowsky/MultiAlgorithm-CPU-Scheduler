@@ -564,7 +564,8 @@ void FakeOS_calculateStatistics(FakeOS *os) {
 
     // Stampa le statistiche
     printf(ANSI_CYAN "\n\n------------------------------------STATISTICS------------------------------------\n" ANSI_RESET);
-    printf(ANSI_CYAN "Turnaround time avrg: \t\t[%.3f ms]\n" ANSI_RESET, avg_turnaround_time);
+    printf(ANSI_CYAN "Total Time: \t\t\t[%d ms]\n" ANSI_RESET, os->timer);
+	printf(ANSI_CYAN "Turnaround time avrg: \t\t[%.3f ms]\n" ANSI_RESET, avg_turnaround_time);
     printf(ANSI_CYAN "Waiting time avrg: \t\t[%.3f ms]\n" ANSI_RESET, avg_waiting_time);
     printf(ANSI_CYAN "Response time avrg: \t\t[%.3f ms] \n" ANSI_RESET, avg_response_time);
     printf(ANSI_CYAN "Throughput: \t\t\t[%f]\n" ANSI_RESET, throughput);
@@ -620,7 +621,7 @@ int main(int argc, char **argv)
 
 	if (argc != 5)
 	{
-		printf(usage_buffer, argv[0]);
+		printf(usage_buffer, argv[0], argv[0]);
 		return 1;
 	}
 
@@ -633,7 +634,7 @@ int main(int argc, char **argv)
 
 	if (num_cores < 1 || scheduler < 0 || scheduler >= MAX_SCHEDULERS)
 	{
-		printf(usage_buffer, argv[0]);
+		printf(usage_buffer, argv[0], argv[0]);
 		return 1;
 	}
 

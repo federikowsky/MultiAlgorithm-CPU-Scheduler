@@ -34,3 +34,8 @@ typedef struct {
     int burst_per_process;
     ListHead burst_profiles;
 } TraceGen;
+
+void TraceGen_init(TraceGen *tg, int num_processes, int burst_per_process, const char *histogram_folder);
+void createEventProc(BurstProfile *bf, int proc_id, int bursts_per_process, const char *dest_folder);
+BurstProfile *BurstProfile_loadHistogram(const char *filename);
+int getBurstDuration(BurstDist *hist, int size, int num_samples);
