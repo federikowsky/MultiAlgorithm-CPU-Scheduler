@@ -1,6 +1,6 @@
 # Compilatore e opzioni
 CC := gcc
-CFLAGS := --std=gnu99 -Wall -D_LIST_DEBUG_ -D_SBS_DEBUG_ -O2
+CFLAGS := --std=gnu99 -Wall -D_LIST_DEBUG_ -O2
 
 # Definizione dei percorsi
 SRC_DIR := scheduler/src
